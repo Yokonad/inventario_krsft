@@ -1,0 +1,16 @@
+{
+    "name": "InventarioKrsft",
+    "display_name": "GESTIÓN DE INVENTARIO",
+    "version": "1.0.0",
+    "description": "Sistema de control de inventario y stock.",
+    "icon": "icon.svg",
+    "color": "#4A90E2",
+    "gradient": "linear-gradient(135deg, #4A90E2, #9013FE)",
+    "author": "yokonad",
+    "enabled": true,
+    "allowed_cargos": [
+        "Admin",
+        "Supervisor"
+    ],
+    "dependencies": []
+}
