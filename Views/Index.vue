@@ -23,9 +23,43 @@
             </header>
 
             <main class="module-content">
-                <div style="text-align: center; padding: 40px; color: var(--inventario-text-dark);">
-                    <h2>Bienvenido al Módulo de Inventario</h2>
-                    <p style="color: var(--inventario-text-gray);">El estilo visual ha sido cargado correctamente.</p>
+                <div style="padding: 20px;">
+                    <!-- Showcase Componentes Reutilizables -->
+                    <div style="background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px;">
+                        <h3 style="margin-bottom: 15px; color: var(--inventario-text-dark);">Componentes Reutilizables (Preview)</h3>
+                        
+                        <div style="display: flex; gap: 20px; flex-wrap: wrap; align-items: center; margin-bottom: 20px;">
+                            <div>
+                                <p style="font-size: 0.8rem; color: #666; margin-bottom: 5px;">Badges de Estado:</p>
+                                <div style="display: flex; gap: 10px;">
+                                    <span class="status-badge pending">Sin Aprobar</span>
+                                    <span class="status-badge approved">Aprobado</span>
+                                    <span class="status-badge rejected">Rechazado</span>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <p style="font-size: 0.8rem; color: #666; margin-bottom: 5px;">Código Ubicación:</p>
+                                <span class="location-code">A-1-1</span>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                            <div>
+                                <label style="display: block; font-size: 0.8rem; margin-bottom: 5px;">Dropdown Categorías</label>
+                                <select class="input-field" style="padding: 8px; border-radius: 6px; border: 1px solid #ddd;">
+                                    <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label style="display: block; font-size: 0.8rem; margin-bottom: 5px;">Dropdown Unidades</label>
+                                <select class="input-field" style="padding: 8px; border-radius: 6px; border: 1px solid #ddd;">
+                                    <option v-for="unit in units" :key="unit" :value="unit">{{ unit }}</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </main>
         </div>
@@ -33,9 +67,27 @@
 </template>
 
 <script setup>
-import { onMounted } from 'vue';
+import { ref } from 'vue';
 import './inventario_theme.css';
 import './inventario.css';
+
+// Constantes Reutilizables (Dropdowns)
+const categories = [
+    'Químicos',
+    'Accesorios', 
+    'Materiales', 
+    'Herramientas', 
+    'Otros'
+];
+
+const units = [
+    'Unidad', 
+    'Galón', 
+    'Metro', 
+    'Kg', 
+    'Litro', 
+    'Caja'
+];
 
 const goBack = () => {
     window.location.href = '/';
