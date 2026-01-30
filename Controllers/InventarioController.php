@@ -19,6 +19,8 @@ class InventarioController extends Controller
             'unidad' => 'UND',
             'precio' => 1200.00,
             'moneda' => 'USD',
+            'categoria' => 'Electrónica',
+            'ubicacion' => 'A-1-1',
             'estado' => 'activo'
         ],
         [
@@ -30,18 +32,22 @@ class InventarioController extends Controller
             'unidad' => 'UND',
             'precio' => 180.50,
             'moneda' => 'USD',
+            'categoria' => 'Electrónica',
+            'ubicacion' => 'A-1-2',
             'estado' => 'activo'
         ],
         [
             'id' => 3,
-            'nombre' => 'Teclado Mecánico',
-            'sku' => 'KB-104',
-            'descripcion' => 'Teclado RGB Switch Blue',
+            'nombre' => 'Ácido Sulfúrico',
+            'sku' => 'CHEM-001',
+            'descripcion' => 'Bidón de 5L',
             'cantidad' => 50,
-            'unidad' => 'UND',
+            'unidad' => 'Galón',
             'precio' => 45.00,
             'moneda' => 'USD',
-            'estado' => 'activo'
+            'categoria' => 'Químicos',
+            'ubicacion' => 'B-2-1',
+            'estado' => 'pendiente'
         ],
         [
             'id' => 4,
@@ -52,6 +58,21 @@ class InventarioController extends Controller
             'unidad' => 'UND',
             'precio' => 850.00,
             'moneda' => 'PEN',
+            'categoria' => 'Mobiliario',
+            'ubicacion' => 'C-1-1',
+            'estado' => 'rechazado'
+        ],
+        [
+            'id' => 5,
+            'nombre' => 'Casco de Seguridad',
+            'sku' => 'SAFE-99',
+            'descripcion' => 'Casco industrial amarillo',
+            'cantidad' => 100,
+            'unidad' => 'UND',
+            'precio' => 25.00,
+            'moneda' => 'PEN',
+            'categoria' => 'EPP',
+            'ubicacion' => 'D-3-4',
             'estado' => 'activo'
         ]
     ];
