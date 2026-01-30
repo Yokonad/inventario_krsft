@@ -69,6 +69,11 @@
     margin-bottom: 24px;
 }
 
+.header-left {
+    display: flex;
+    align-items: center;
+}
+
 .header-left h1 {
     display: flex;
     align-items: center;
