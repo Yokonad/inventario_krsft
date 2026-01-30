@@ -4,12 +4,57 @@ namespace Modulos_ERP\InventarioKrsft\Controllers;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class InventarioController extends Controller
 {
-    protected $productsTable = 'inventario_productos';
+    // Mock Data simulating DB records
+    private $mockProducts = [
+        [
+            'id' => 1,
+            'nombre' => 'Laptop Gamer HP',
+            'sku' => 'LAP-001',
+            'descripcion' => 'Laptop de alto rendimiento',
+            'cantidad' => 15,
+            'unidad' => 'UND',
+            'precio' => 1200.00,
+            'moneda' => 'USD',
+            'estado' => 'activo'
+        ],
+        [
+            'id' => 2,
+            'nombre' => 'Monitor 24" Dell',
+            'sku' => 'MON-023',
+            'descripcion' => 'Monitor IPS Full HD',
+            'cantidad' => 30,
+            'unidad' => 'UND',
+            'precio' => 180.50,
+            'moneda' => 'USD',
+            'estado' => 'activo'
+        ],
+        [
+            'id' => 3,
+            'nombre' => 'Teclado Mecánico',
+            'sku' => 'KB-104',
+            'descripcion' => 'Teclado RGB Switch Blue',
+            'cantidad' => 50,
+            'unidad' => 'UND',
+            'precio' => 45.00,
+            'moneda' => 'USD',
+            'estado' => 'activo'
+        ],
+        [
+            'id' => 4,
+            'nombre' => 'Silla Ergonómica',
+            'sku' => 'FUR-005',
+            'descripcion' => 'Silla de oficina con soporte lumbar',
+            'cantidad' => 10,
+            'unidad' => 'UND',
+            'precio' => 850.00,
+            'moneda' => 'PEN',
+            'estado' => 'activo'
+        ]
+    ];
 
     public function index()
     {
@@ -18,23 +63,101 @@ class InventarioController extends Controller
     }
 
     /**
-     * Listar todos los productos
+     * Listar todos los productos (Mock)
      */
     public function list(Request $request)
     {
-        try {
-            $query = DB::table($this->productsTable)
-                ->orderBy('nombre', 'asc');
-            
-            $products = $query->get();
+        return response()->json([
+            'success' => true,
+            'products' => $this->mockProducts,
+            'total' => count($this->mockProducts)
+        ]);
+    }
 
-            return response()->json([
-                'success' => true,
-                'products' => $products,
-                'total' => $products->count()
-            ]);
-        } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage(), 'products' => []]);
+    /**
+     * Obtener estadísticas (Mock)
+     */
+    public function stats()
+    {
+        $totalItems = count($this->mockProducts);
+        $totalValueUsd = 0;
+        
+        foreach ($this->mockProducts as $p) {
+            if ($p['moneda'] === 'USD') {
+                $totalValueUsd += ($p['precio'] * $p['cantidad']);
+            } else {
+                // Simple conversion for mock
+                $totalValueUsd += (($p['precio'] / 3.75) * $p['cantidad']);
+            }
         }
+
+        return response()->json([
+            'success' => true,
+            'stats' => [
+                'total_products' => $totalItems,
+                'active_products' => $totalItems,
+                'total_value_usd' => round($totalValueUsd, 2),
+                'stock_alert' => 1 // Mock alert count
+            ]
+        ]);
+    }
+
+    /**
+     * Detalle de producto (Mock)
+     */
+    public function show($id)
+    {
+        $product = collect($this->mockProducts)->firstWhere('id', (int)$id);
+
+        if (!$product) {
+            return response()->json(['success' => false, 'message' => 'Producto no encontrado'], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'product' => $product
+        ]);
+    }
+
+    /**
+     * Crear producto (Mock - No guarda)
+     */
+    public function store(Request $request)
+    {
+        $request->validate([
+            'nombre' => 'required|string',
+            'sku' => 'required|string',
+            'cantidad' => 'required|integer'
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Producto creado correctamente (Simulación)',
+            'data' => $request->all()
+        ]);
+    }
+
+    /**
+     * Actualizar producto (Mock - No guarda)
+     */
+    public function update(Request $request, $id)
+    {
+        return response()->json([
+            'success' => true,
+            'message' => 'Producto actualizado correctamente (Simulación)',
+            'id' => $id
+        ]);
+    }
+
+    /**
+     * Eliminar producto (Mock - No guarda)
+     */
+    public function destroy($id)
+    {
+        return response()->json([
+            'success' => true,
+            'message' => 'Producto eliminado correctamente (Simulación)',
+            'id' => $id
+        ]);
     }
 }

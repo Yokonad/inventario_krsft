@@ -1,7 +1,7 @@
 {
     "name": "InventarioKrsft",
     "display_name": "GESTIÓN DE INVENTARIO",
-    "version": "1.0.4",
+    "version": "1.1.0",
     "description": "Sistema de control de inventario y stock.",
     "icon": "icon.svg",
     "color": "#4A90E2",
