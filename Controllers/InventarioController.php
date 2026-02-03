@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Modulos_ERP\InventarioKrsft\Models\Producto;
 
 class InventarioController extends Controller
@@ -269,7 +270,7 @@ class InventarioController extends Controller
             foreach ($items as $item) {
                 $newProduct = [
                     'nombre' => $item['description'] ?? 'Material sin descripción',
-                    'sku' => 'QP-' . substr(md5($batchId . $item['description']), 0, 8),
+                    'sku' => 'QP-' . substr(md5($batchId . ($item['description'] ?? '')), 0, 8),
                     'descripcion' => $item['description'] ?? '',
                     'cantidad' => $item['qty'] ?? 1,
                     'unidad' => $item['unit'] ?? 'UND',
@@ -287,13 +288,15 @@ class InventarioController extends Controller
                     'series' => $item['series'] ?? null,
                     'material_type' => $item['material_type'] ?? null,
                     'amount' => $item['subtotal'] ?? 0,
-                    'amount_pen' => $item['amount_pen'] ?? ($item['subtotal'] ?? 0)
+                    'amount_pen' => $item['amount_pen'] ?? ($item['subtotal'] ?? 0),
+                    'created_at' => now(),
+                    'updated_at' => now()
                 ];
 
-                $addedItems[] = Producto::firstOrCreate(
-                    ['sku' => $newProduct['sku']],
-                    $newProduct
-                );
+                $inserted = $this->insertInventoryItem($newProduct);
+                if ($inserted) {
+                    $addedItems[] = $inserted;
+                }
             }
 
             return response()->json([
@@ -394,6 +397,30 @@ class InventarioController extends Controller
             ->exists();
     }
 
+    private function insertInventoryItem(array $data)
+    {
+        $columns = Schema::getColumnListing('inventario_productos');
+        $filtered = array_intersect_key($data, array_flip($columns));
+
+        if (empty($filtered)) {
+            return null;
+        }
+
+        if (in_array('sku', $columns, true) && !empty($filtered['sku'])) {
+            $exists = DB::table('inventario_productos')
+                ->where('sku', $filtered['sku'])
+                ->exists();
+
+            if ($exists) {
+                return null;
+            }
+        }
+
+        DB::table('inventario_productos')->insert($filtered);
+
+        return $filtered;
+    }
+
     private function syncPaidOrdersToInventory(): void
     {
         try {
@@ -442,15 +469,7 @@ class InventarioController extends Controller
                 foreach ($items as $item) {
                     $sku = 'QP-' . substr(md5($batchId . ($item['description'] ?? '')), 0, 8);
 
-                    $exists = DB::table('inventario_productos')
-                        ->where('sku', $sku)
-                        ->exists();
-
-                    if ($exists) {
-                        continue;
-                    }
-
-                    DB::table('inventario_productos')->insert([
+                    $newProduct = [
                         'nombre' => $item['description'] ?? 'Material sin descripción',
                         'sku' => $sku,
                         'descripcion' => $item['description'] ?? '',
@@ -473,7 +492,9 @@ class InventarioController extends Controller
                         'amount_pen' => $item['amount_pen'] ?? ($item['subtotal'] ?? 0),
                         'created_at' => now(),
                         'updated_at' => now()
-                    ]);
+                    ];
+
+                    $this->insertInventoryItem($newProduct);
                 }
             }
         } catch (\Exception $e) {
