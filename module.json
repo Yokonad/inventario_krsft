@@ -12,5 +12,5 @@
         "Admin",
         "Supervisor"
     ],
-    "dependencies": ["ComprasKrsft"]
+    "dependencies": []
 }
