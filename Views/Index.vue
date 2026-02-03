@@ -63,69 +63,6 @@
                     </div>
                 </div>
 
-                <!-- SECCIÓN: Items Apartados para Proyectos -->
-                <div style="background: linear-gradient(135deg, #fef3c7, #fde68a); border: 2px solid #f59e0b; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(245, 158, 11, 0.1);">
-                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
-                        <div style="display: flex; align-items: center; gap: 12px;">
-                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2">
-                                <rect x="3" y="3" width="7" height="7"></rect>
-                                <rect x="14" y="3" width="7" height="7"></rect>
-                                <rect x="14" y="14" width="7" height="7"></rect>
-                                <rect x="3" y="14" width="7" height="7"></rect>
-                            </svg>
-                            <h2 style="margin: 0; color: #92400e; font-size: 1.1rem; font-weight: 700;">MATERIALES APARTADOS (Sin Ubicación)</h2>
-                        </div>
-                        <span style="background: #f59e0b; color: white; padding: 4px 12px; border-radius: 20px; font-weight: 600; font-size: 0.9rem;">{{ reservedItems.length }} items</span>
-                    </div>
-
-                    <div v-if="reservedItems.length === 0" style="text-align: center; padding: 30px; color: #92400e;">
-                        <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin: 0 auto 10px; opacity: 0.5;">
-                            <path d="M9 19v-6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2zm0 0V9a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v10m-6 0a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2m0 0V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2z"></path>
-                        </svg>
-                        <p style="margin: 0; font-size: 0.95rem;">No hay materiales apartados en este momento</p>
-                    </div>
-
-                    <div v-else style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 12px;">
-                        <div v-for="item in reservedItems" :key="item.id" style="background: white; border: 1px solid #fcd34d; border-radius: 10px; padding: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-                            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
-                                <div>
-                                    <div style="font-weight: 700; color: #1f2937; font-size: 0.95rem;">{{ item.nombre }}</div>
-                                    <div style="font-size: 0.75rem; color: #6b7280; margin-top: 2px;">{{ item.sku }}</div>
-                                </div>
-                                <span style="background: #fbbf24; color: #78350f; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">{{ item.estado_ubicacion === 'asignada' ? '✓ ASIGNADA' : '⚠ PENDIENTE' }}</span>
-                            </div>
-
-                            <div style="background: #f3f4f6; padding: 10px; border-radius: 6px; margin-bottom: 12px;">
-                                <div style="font-size: 0.75rem; color: #6b7280; margin-bottom: 6px;">📌 PROYECTO</div>
-                                <div style="font-weight: 600; color: #374151; font-size: 0.9rem;">{{ item.nombre_proyecto }}</div>
-                            </div>
-
-                            <div style="display: flex; gap: 12px; margin-bottom: 12px;">
-                                <div style="flex: 1;">
-                                    <div style="font-size: 0.7rem; color: #6b7280; text-transform: uppercase; margin-bottom: 2px;">Cantidad</div>
-                                    <div style="font-weight: 700; color: #1f2937;">{{ item.cantidad }} {{ item.unidad }}</div>
-                                </div>
-                                <div style="flex: 1;">
-                                    <div style="font-size: 0.7rem; color: #6b7280; text-transform: uppercase; margin-bottom: 2px;">Valor</div>
-                                    <div style="font-weight: 700; color: #1f2937;">{{ item.currency || 'PEN' }} {{ item.amount }}</div>
-                                </div>
-                            </div>
-
-                            <div v-if="item.ubicacion" style="background: #d1fae5; border: 1px solid #6ee7b7; padding: 8px; border-radius: 6px; margin-bottom: 12px; text-align: center;">
-                                <div style="font-size: 0.7rem; color: #047857; text-transform: uppercase; margin-bottom: 2px;">Ubicación ZNP</div>
-                                <div class="location-code" style="font-size: 0.95rem;">{{ item.ubicacion }}</div>
-                            </div>
-
-                            <button v-if="item.estado_ubicacion !== 'asignada'" @click="openLocationModal(item)" style="width: 100%; padding: 8px; background: #f59e0b; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.9rem; transition: all 0.2s;">
-                                📍 Asignar Ubicación
-                            </button>
-                            <button v-else disabled style="width: 100%; padding: 8px; background: #d1fae5; color: #047857; border: none; border-radius: 6px; font-weight: 600; cursor: not-allowed; font-size: 0.9rem;">
-                                ✓ Ubicación Asignada
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Tabla de Datos -->
                 <div style="background: white; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); overflow: hidden;">
                     <table style="width: 100%; border-collapse: collapse;">
@@ -133,24 +70,34 @@
                             <tr>
                                 <th style="padding: 12px 20px; text-align: left; font-size: 0.8rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Producto</th>
                                 <th style="padding: 12px 20px; text-align: left; font-size: 0.8rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Categoría</th>
-                                <th style="padding: 12px 20px; text-align: center; font-size: 0.8rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Unidad</th>
                                 <th style="padding: 12px 20px; text-align: center; font-size: 0.8rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Cant.</th>
+                                <th style="padding: 12px 20px; text-align: left; font-size: 0.8rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Proyecto</th>
                                 <th style="padding: 12px 20px; text-align: left; font-size: 0.8rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Ubicación</th>
                                 <th style="padding: 12px 20px; text-align: center; font-size: 0.8rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Estado</th>
                                 <th style="padding: 12px 20px; text-align: center; font-size: 0.8rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="item in filteredItems" :key="item.id" style="border-bottom: 1px solid #f1f5f9; transition: background 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+                            <tr v-for="item in filteredItems" :key="item.id" style="border-bottom: 1px solid #f1f5f9; transition: background 0.2s;" :style="item.apartado ? 'background: #fef3c7;' : ''" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background=''">
                                 <td style="padding: 12px 20px;">
                                     <div style="font-weight: 600; color: #334155;">{{ item.nombre }}</div>
                                     <div style="font-size: 0.8rem; color: #94a3b8;">{{ item.sku }}</div>
                                 </td>
                                 <td style="padding: 12px 20px; color: #475569;">{{ item.categoria }}</td>
-                                <td style="padding: 12px 20px; text-align: center; color: #475569;">{{ item.unidad }}</td>
                                 <td style="padding: 12px 20px; text-align: center; font-weight: 600; color: #334155;">{{ item.cantidad }}</td>
                                 <td style="padding: 12px 20px;">
-                                    <span class="location-code">{{ item.ubicacion }}</span>
+                                    <div v-if="item.apartado" style="display: flex; align-items: center; gap: 8px;">
+                                        <span style="background: #fbbf24; color: #78350f; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">📌 APARTADO</span>
+                                        <span style="font-weight: 600; color: #b45309;">{{ item.nombre_proyecto }}</span>
+                                    </div>
+                                    <span v-else style="color: #94a3b8;">-</span>
+                                </td>
+                                <td style="padding: 12px 20px;">
+                                    <div v-if="item.ubicacion">
+                                        <span class="location-code">{{ item.ubicacion }}</span>
+                                    </div>
+                                    <div v-else-if="item.apartado" style="color: #ef4444; font-weight: 600; font-size: 0.85rem;">⚠ Pendiente</div>
+                                    <span v-else style="color: #94a3b8;">-</span>
                                 </td>
                                 <td style="padding: 12px 20px; text-align: center;">
                                     <span class="status-badge" 
@@ -164,6 +111,9 @@
                                 </td>
                                 <td style="padding: 12px 20px; text-align: center;">
                                     <div style="display: flex; gap: 8px; justify-content: center;">
+                                        <button v-if="item.apartado && !item.ubicacion" @click="openLocationModal(item)" title="Asignar Ubicación" style="background: none; border: none; cursor: pointer; color: #f59e0b; padding: 4px; border-radius: 4px; font-weight: 600;" onmouseover="this.style.background='#fffbeb'" onmouseout="this.style.background='none'">
+                                            📍
+                                        </button>
                                         <button @click="openModal(item)" title="Editar" style="background: none; border: none; cursor: pointer; color: #3b82f6; padding: 4px; border-radius: 4px;" onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='none'">
                                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                                         </button>
@@ -393,7 +343,10 @@ const fetchProducts = async () => {
 
 // Computed: Filtros
 const filteredItems = computed(() => {
-    return products.value.filter(item => {
+    // Combinar items normales y apartados
+    const allItems = [...products.value, ...reservedItems.value];
+    
+    return allItems.filter(item => {
         const matchSearch = item.nombre.toLowerCase().includes(searchQuery.value.toLowerCase()) || 
                             item.sku.toLowerCase().includes(searchQuery.value.toLowerCase());
         const matchCat = filterCategory.value ? item.categoria === filterCategory.value : true;
