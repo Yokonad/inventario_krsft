@@ -103,7 +103,7 @@
                                             </svg>
                                             APARTADO
                                         </span>
-                                        <span class="project-pill" :style="getProjectPillStyle(item.nombre_proyecto)">
+                                        <span class="project-pill" :style="getProjectPillStyle(item)">
                                             {{ item.nombre_proyecto }}
                                         </span>
                                     </div>
@@ -399,20 +399,43 @@ const locationForm = ref({
     posicion: 1
 });
 
-const getProjectPillStyle = (name) => {
-    if (!name) return {};
-    let hash = 0;
-    for (let i = 0; i < name.length; i += 1) {
-        hash = name.charCodeAt(i) + ((hash << 5) - hash);
+const projectColors = [
+    '#0AA4A4',
+    '#3b82f6',
+    '#8b5cf6',
+    '#ec4899',
+    '#f59e0b',
+    '#10b981',
+    '#ef4444',
+    '#06b6d4',
+    '#6366f1',
+    '#84cc16'
+];
+
+const getProjectPillStyle = (item) => {
+    if (!item) return {};
+    const projectId = item.project_id ?? item.proyecto_id ?? item.id_proyecto ?? null;
+    let color = null;
+
+    if (typeof projectId === 'number') {
+        color = projectColors[projectId % projectColors.length];
     }
-    const hue = Math.abs(hash) % 360;
-    const background = `hsl(${hue} 55% 48%)`;
-    const border = `hsl(${hue} 55% 35%)`;
-    const text = '#ffffff';
+
+    if (!color && item.nombre_proyecto) {
+        let hash = 0;
+        const name = item.nombre_proyecto;
+        for (let i = 0; i < name.length; i += 1) {
+            hash = name.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        const index = Math.abs(hash) % projectColors.length;
+        color = projectColors[index];
+    }
+
+    if (!color) return {};
+
     return {
-        backgroundColor: background,
-        borderColor: border,
-        color: text
+        backgroundColor: color,
+        color: '#ffffff'
     };
 };
 
