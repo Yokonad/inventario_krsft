@@ -307,13 +307,13 @@ body.dark-mode .theme-toggle .sun-icon {
     align-items: center;
     gap: 6px;
     background: #e2b04b;
-    color: #4a2f00;
+    color: #ffffff;
     padding: 4px 12px;
     border-radius: 999px;
     font-size: 0.75rem;
     font-weight: 700;
     text-transform: uppercase;
-    border: 1px solid rgba(74, 47, 0, 0.25);
+    border: none;
 }
 
 .project-pill {
@@ -325,7 +325,7 @@ body.dark-mode .theme-toggle .sun-icon {
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.2px;
-    border: 1px solid transparent;
+    border: none;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
 }
 
