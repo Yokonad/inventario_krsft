@@ -1,8 +1,8 @@
 {
     "name": "InventarioKrsft",
     "slug": "inventario_krsft",
-    "display_name": "GESTIÓN DE INVENTARIO",
-    "version": "2.5.7",
+    "display_name": "INVENTARIOS",
+    "version": "2.5.8",
     "description": "Sistema de control de inventario y stock. Actualización en tiempo real con caché localStorage para carga instantánea. Recibe materiales de ComprasKrsft automáticamente.",
     "icon": "icon.svg",
     "color": "#4A90E2",
