@@ -548,7 +548,7 @@ body.dark-mode .theme-toggle .sun-icon {
 }
 
 .modal-header--warning {
-    background: var(--inventario-modal-warning-bg);
+    background: var(--inventario-warning);
 }
 
 .modal-title {
@@ -561,7 +561,7 @@ body.dark-mode .theme-toggle .sun-icon {
 }
 
 .modal-title--warning {
-    color: var(--inventario-warning-text);
+    color: var(--inventario-text-white);
 }
 
 .modal-close {
@@ -573,7 +573,7 @@ body.dark-mode .theme-toggle .sun-icon {
 }
 
 .modal-close--warning {
-    color: var(--inventario-warning-text);
+    color: var(--inventario-text-white);
 }
 
 .modal-body {
@@ -673,6 +673,18 @@ body.dark-mode .theme-toggle .sun-icon {
     color: var(--inventario-text-gray);
     cursor: pointer;
     transition: var(--inventario-transition-fast);
+}
+
+.btn-secondary.btn-secondary--danger,
+.btn-secondary.is-danger {
+    background: var(--inventario-danger);
+    color: var(--inventario-text-white);
+    border-color: transparent;
+}
+
+.btn-secondary.btn-secondary--danger:hover,
+.btn-secondary.is-danger:hover {
+    background: var(--inventario-danger-dark);
 }
 
 .btn-secondary:hover {

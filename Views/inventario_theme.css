@@ -13,8 +13,8 @@
     --inventario-gradient: linear-gradient(135deg, #4A90E2 0%, #5B9FE8 50%, #9013FE 100%);
 
     /* Colores para Animación del Fondo */
-    --inventario-bg-color-1: #4A90E2;
-    --inventario-bg-color-2: #9013FE;
+    --inventario-bg-color-1: #0AA4A4;
+    --inventario-bg-color-2: #2F6FBF;
 
     /* Toggle Border - Modo Claro */
     --inventario-toggle-border: #94a3b8;

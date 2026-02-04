@@ -255,7 +255,6 @@
                                 </svg>
                                 Asignar Ubicación ZNP
                             </h2>
-                            <button @click="closeLocationModal" class="modal-close modal-close--warning">&times;</button>
                         </div>
                         
                         <div class="modal-body">
@@ -307,7 +306,7 @@
                                 </div>
 
                                 <div class="modal-actions">
-                                    <button type="button" @click="closeLocationModal" class="btn-secondary">Cancelar</button>
+                                    <button type="button" @click="closeLocationModal" class="btn-secondary is-danger">Cancelar</button>
                                     <button type="submit" class="btn-warning">
                                         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                             <path d="M12 22s6-4 6-10a6 6 0 0 0-12 0c0 6 6 10 6 10z"/>
