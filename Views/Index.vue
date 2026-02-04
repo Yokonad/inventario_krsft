@@ -299,8 +299,33 @@ import './inventario.css';
 let pollingInterval = null;
 const POLLING_INTERVAL_MS = 3000; // 3 segundos
 
-// Helper para comparar arrays y evitar re-renders innecesarios
+// ============= SISTEMA DE CACHÉ =============
+const CACHE_PREFIX = 'inventario_cache_';
+
+// Helper para comparar y evitar re-renders
 const arraysEqual = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+
+// Guardar en caché
+const saveToCache = (key, data) => {
+    try {
+        localStorage.setItem(CACHE_PREFIX + key, JSON.stringify({
+            data,
+            timestamp: Date.now()
+        }));
+    } catch (e) { console.warn('Cache save error:', e); }
+};
+
+// Cargar desde caché
+const loadFromCache = (key) => {
+    try {
+        const cached = localStorage.getItem(CACHE_PREFIX + key);
+        if (cached) {
+            const { data } = JSON.parse(cached);
+            return data;
+        }
+    } catch (e) { console.warn('Cache load error:', e); }
+    return null;
+};
 
 // Constantes
 const categories = ['Electrónica', 'Químicos', 'Mobiliario', 'EPP', 'Accesorios', 'Herramientas', 'Otros'];
@@ -335,13 +360,18 @@ const locationForm = ref({
     posicion: 1
 });
 
-// API Fetch - Solo actualiza si hay cambios para evitar parpadeo
+// API Fetch - Con sistema de caché para carga instantánea
 const fetchProducts = async () => {
     try {
         const response = await fetch('/api/inventario_krsft/list');
         const data = await response.json();
-        if (data.success && !arraysEqual(products.value, data.products)) {
-            products.value = data.products;
+        if (data.success) {
+            const newProducts = data.products || [];
+            // Solo actualizar UI si hay cambios reales
+            if (!arraysEqual(products.value, newProducts)) {
+                products.value = newProducts;
+                saveToCache('products', newProducts);
+            }
         }
     } catch (error) {
         console.error("Error fetching products:", error);
@@ -512,19 +542,35 @@ const fetchReservedItems = async () => {
     try {
         const response = await fetch('/api/inventario_krsft/reserved-items');
         const data = await response.json();
-        if (data.success && !arraysEqual(reservedItems.value, data.reserved_items)) {
-            reservedItems.value = data.reserved_items;
+        if (data.success) {
+            const newItems = data.reserved_items || [];
+            if (!arraysEqual(reservedItems.value, newItems)) {
+                reservedItems.value = newItems;
+                saveToCache('reservedItems', newItems);
+            }
         }
     } catch (error) {
         console.error("Error fetching reserved items:", error);
     }
 };
 
+// Inicializar datos desde caché inmediatamente
+const initFromCache = () => {
+    const cachedProducts = loadFromCache('products');
+    const cachedReserved = loadFromCache('reservedItems');
+    if (cachedProducts) products.value = cachedProducts;
+    if (cachedReserved) reservedItems.value = cachedReserved;
+};
+
 onMounted(() => {
+    // 1. Cargar datos cacheados INMEDIATAMENTE (sin esperar fetch)
+    initFromCache();
+    
+    // 2. Fetch en background para actualizar si hay cambios
     fetchProducts();
     fetchReservedItems();
     
-    // Iniciar polling para tiempo real
+    // 3. Iniciar polling para tiempo real
     pollingInterval = setInterval(() => {
         fetchProducts();
         fetchReservedItems();
