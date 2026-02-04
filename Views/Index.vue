@@ -291,9 +291,13 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue';
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue';
 import './inventario_theme.css';
 import './inventario.css';
+
+// Polling interval para tiempo real
+let pollingInterval = null;
+const POLLING_INTERVAL_MS = 5000; // 5 segundos
 
 // Constantes
 const categories = ['Electrónica', 'Químicos', 'Mobiliario', 'EPP', 'Accesorios', 'Herramientas', 'Otros'];
@@ -516,6 +520,20 @@ const fetchReservedItems = async () => {
 onMounted(() => {
     fetchProducts();
     fetchReservedItems();
+    
+    // Iniciar polling para tiempo real
+    pollingInterval = setInterval(() => {
+        fetchProducts();
+        fetchReservedItems();
+    }, POLLING_INTERVAL_MS);
+});
+
+onUnmounted(() => {
+    // Limpiar polling al salir del componente
+    if (pollingInterval) {
+        clearInterval(pollingInterval);
+        pollingInterval = null;
+    }
 });
 
 const goBack = () => {
