@@ -641,7 +641,10 @@
                             <div class="detail-section">
                                 <h3 class="section-title">Solución</h3>
                                 <div class="form-group">
-                                    <label class="form-label">Descripción de la solución</label>
+                                    <label class="form-label">
+                                        Descripción de la solución
+                                        <span v-if="selectedReporte.estado === 'resuelto'" class="label-badge">(Solo lectura)</span>
+                                    </label>
                                     <textarea 
                                         v-model="solucionReporte" 
                                         class="textarea-field" 
@@ -649,13 +652,9 @@
                                         rows="4"
                                         :disabled="selectedReporte.estado === 'resuelto'"
                                     ></textarea>
-                                </div>
-                                <div v-if="selectedReporte.solucion" class="solution-display">
-                                    <label class="detail-label">Solución Registrada</label>
-                                    <div class="detail-value detail-value--text">{{ selectedReporte.solucion }}</div>
                                     <div class="solution-meta" v-if="selectedReporte.resuelto_por">
                                         <span>Resuelto por: <strong>{{ selectedReporte.resuelto_por }}</strong></span>
-                                        <span v-if="selectedReporte.resuelto_at">el {{ formatDate(selectedReporte.resuelto_at) }}</span>
+                                        <span v-if="selectedReporte.resuelto_at"> el {{ formatDate(selectedReporte.resuelto_at) }}</span>
                                     </div>
                                 </div>
                             </div>
