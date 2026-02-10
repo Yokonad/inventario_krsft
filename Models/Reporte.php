@@ -18,11 +18,15 @@ class Reporte extends Model
         'estado',
         'notas',
         'revisado_at',
-        'revisado_por'
+        'revisado_por',
+        'solucion',
+        'resuelto_at',
+        'resuelto_por'
     ];
 
     protected $casts = [
         'revisado_at' => 'datetime',
+        'resuelto_at' => 'datetime',
     ];
 
     /**

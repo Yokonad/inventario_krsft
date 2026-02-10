@@ -27,3 +27,4 @@ Route::post('/verify/{id}', "{$ctrl}@verify")->where('id', '[0-9]+');
 Route::post('/reportes', "{$ctrl}@createReporte");
 Route::get('/reportes', "{$ctrl}@listReportes");
 Route::put('/reportes/{id}', "{$ctrl}@updateReporte")->where('id', '[0-9]+');
+Route::delete('/reportes/{id}', "{$ctrl}@deleteReporte")->where('id', '[0-9]+');

@@ -437,11 +437,16 @@ class InventarioController extends Controller
                 ], 404);
             }
 
-            $data = $request->only(['estado', 'notas']);
+            $data = $request->only(['estado', 'notas', 'solucion', 'resuelto_por']);
             
             if ($request->has('estado') && $request->input('estado') === 'revisado') {
                 $data['revisado_at'] = now();
                 $data['revisado_por'] = $request->input('revisado_por', 'Sistema');
+            }
+
+            if ($request->has('estado') && $request->input('estado') === 'resuelto') {
+                $data['resuelto_at'] = now();
+                $data['resuelto_por'] = $request->input('resuelto_por', 'Sistema');
             }
 
             $reporte->update($data);
@@ -450,6 +455,29 @@ class InventarioController extends Controller
                 'success' => true,
                 'message' => 'Reporte actualizado correctamente',
                 'data' => $reporte
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    public function deleteReporte($id)
+    {
+        try {
+            $reporte = Reporte::find($id);
+            if (!$reporte) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Reporte no encontrado'
+                ], 404);
+            }
+
+            $reporte->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Reporte eliminado correctamente'
             ]);
 
         } catch (\Exception $e) {

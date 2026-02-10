@@ -1645,6 +1645,35 @@ body.dark-mode .theme-toggle .sun-icon {
     height: 18px;
 }
 
+.btn-danger {
+    padding: 10px 20px;
+    border: none;
+    background: var(--inventario-danger);
+    color: #ffffff;
+    border-radius: var(--inventario-radius-md);
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--inventario-transition-fast);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-danger:hover {
+    background: var(--inventario-danger-dark);
+}
+
+.btn-danger:disabled {
+    background: var(--inventario-text-light);
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.btn-danger svg {
+    width: 18px;
+    height: 18px;
+}
+
 .project-badge {
     display: inline-block;
     padding: 4px 12px;

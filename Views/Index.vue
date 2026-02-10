@@ -685,6 +685,16 @@
                                         </svg>
                                         Resolver Problema
                                     </button>
+                                    <button 
+                                        @click="eliminarReporte()" 
+                                        class="btn-danger"
+                                        title="Eliminar este reporte">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <polyline points="3 6 5 6 21 6"></polyline>
+                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"></path>
+                                        </svg>
+                                        Eliminar Reporte
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -1336,6 +1346,39 @@ const cambiarEstadoReporte = async (nuevoEstado) => {
     } catch (error) {
         console.error('Error al cambiar estado del reporte:', error);
         alert('Error al actualizar el reporte');
+    }
+};
+
+const eliminarReporte = async () => {
+    if (!selectedReporte.value) return;
+
+    const mensaje = `¿Está seguro de que desea eliminar el reporte de "${selectedReporte.value.producto_nombre}"? Esta acción no se puede deshacer.`;
+
+    if (!confirm(mensaje)) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/inventario_krsft/reportes/${selectedReporte.value.id}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+            }
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            alert('✓ Reporte eliminado correctamente');
+            fetchReportes();
+            closeReporteDetail();
+        } else {
+            alert(`❌ Error: ${data.message || 'No se pudo eliminar'}`);
+        }
+    } catch (error) {
+        console.error('Error al eliminar el reporte:', error);
+        alert('Error al eliminar el reporte');
     }
 };
 
