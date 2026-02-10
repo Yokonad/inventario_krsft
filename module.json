@@ -3,7 +3,7 @@
     "slug": "inventario_krsft",
     "display_name": "INVENTARIO",
     "version": "2.8.8",
-    "description": "Sistema de control de inventario y stock. v2.8.8: Fix audit issues"
+    "description": "Sistema de control de inventario y stock. v2.8.8: Fix audit issues",
     "icon": "icon.svg",
     "color": "#4A90E2",
     "gradient": "linear-gradient(135deg, #4A90E2, #9013FE)",
