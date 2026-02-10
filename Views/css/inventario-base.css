@@ -1,0 +1,116 @@
+/* ============================================
+   INVENTARIO — BASE & LAYOUT
+   Fondo animado del módulo, overrides del theme-toggle,
+   tabs de navegación y utilidades compartidas.
+   Usa: Bytewave-theme.css (global), modules-layout.css (layout).
+   ============================================ */
+
+/* ---- Fondo animado con colores del módulo ---- */
+.inventario-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, var(--inventario-bg-color-1), var(--inventario-bg-color-2));
+    background-size: 200% 200%;
+    animation: gradientShift 8s ease infinite;
+    z-index: 0;
+}
+
+/* ---- Override del header h1 con color del módulo ---- */
+.module-header .title-icon {
+    color: var(--inventario-primary);
+}
+
+/* ---- Theme toggle: módulo usa patrón acción (luna=ir a oscuro, sol=ir a claro) ---- */
+.theme-toggle {
+    border-color: var(--inventario-toggle-border);
+}
+
+body:not(.dark-mode) .theme-toggle .moon-icon { display: block; }
+body:not(.dark-mode) .theme-toggle .sun-icon { display: none; }
+body.dark-mode .theme-toggle .moon-icon { display: none; }
+body.dark-mode .theme-toggle .sun-icon { display: block; }
+
+/* ---- Tabs de navegación ---- */
+.tabs-nav {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 0;
+}
+
+.tab-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-gray);
+    cursor: pointer;
+    transition: var(--transition-fast);
+    margin-bottom: -2px;
+}
+
+.tab-btn svg { width: 20px; height: 20px; }
+.tab-btn:hover { color: var(--inventario-primary); background: var(--bg-light); }
+.tab-btn.is-active { color: var(--inventario-primary); border-bottom-color: var(--inventario-primary); }
+
+.tab-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 8px;
+    background: var(--inventario-badge-success-bg);
+    color: var(--inventario-badge-success-text);
+    border-radius: var(--inventario-radius-full);
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.tab-badge--alert {
+    background: var(--inventario-badge-danger-bg);
+    color: var(--inventario-badge-danger-text);
+    animation: pulseAlert 2s ease infinite;
+}
+
+@keyframes pulseAlert {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+.tab-content { animation: fadeIn 0.3s ease; }
+
+/* ---- Botón primario del módulo (azul) ---- */
+.btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: var(--inventario-primary);
+    border: none;
+    border-radius: var(--inventario-radius-md);
+    color: var(--text-white);
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.btn-primary:hover {
+    background: var(--inventario-primary-dark);
+    transform: translateY(-2px);
+    box-shadow: var(--inventario-shadow-primary);
+}
+
+/* ---- Utilidades compartidas ---- */
+.icon { width: 16px; height: 16px; }
+.icon-pin { width: 18px; height: 18px; }
+.text-muted { color: var(--text-light); }
