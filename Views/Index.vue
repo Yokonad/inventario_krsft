@@ -246,19 +246,31 @@
                                 </svg>
                                 Reportes de Materiales
                             </h3>
-                            <div class="reportes-stats">
-                                <div class="stat-item stat-item--pending">
-                                    <span class="stat-label">Pendientes</span>
-                                    <span class="stat-value">{{ reportes.filter(r => r.estado === 'pendiente').length }}</span>
-                                </div>
-                                <div class="stat-item stat-item--reviewed">
-                                    <span class="stat-label">Revisados</span>
-                                    <span class="stat-value">{{ reportes.filter(r => r.estado === 'revisado').length }}</span>
-                                </div>
-                                <div class="stat-item stat-item--resolved">
-                                    <span class="stat-label">Resueltos</span>
-                                    <span class="stat-value">{{ reportes.filter(r => r.estado === 'resuelto').length }}</span>
-                                </div>
+                            <div class="reportes-filters">
+                                <button 
+                                    @click="filterReporteEstado = ''"
+                                    :class="['filter-estado-btn', { 'is-active': filterReporteEstado === '' }]">
+                                    Todos
+                                    <span class="filter-badge">{{ reportes.length }}</span>
+                                </button>
+                                <button 
+                                    @click="filterReporteEstado = 'pendiente'"
+                                    :class="['filter-estado-btn filter-estado-btn--pending', { 'is-active': filterReporteEstado === 'pendiente' }]">
+                                    Pendientes
+                                    <span class="filter-badge">{{ reportes.filter(r => r.estado === 'pendiente').length }}</span>
+                                </button>
+                                <button 
+                                    @click="filterReporteEstado = 'revisado'"
+                                    :class="['filter-estado-btn filter-estado-btn--reviewed', { 'is-active': filterReporteEstado === 'revisado' }]">
+                                    Revisados
+                                    <span class="filter-badge">{{ reportes.filter(r => r.estado === 'revisado').length }}</span>
+                                </button>
+                                <button 
+                                    @click="filterReporteEstado = 'resuelto'"
+                                    :class="['filter-estado-btn filter-estado-btn--resolved', { 'is-active': filterReporteEstado === 'resuelto' }]">
+                                    Resueltos
+                                    <span class="filter-badge">{{ reportes.filter(r => r.estado === 'resuelto').length }}</span>
+                                </button>
                             </div>
                         </div>
 
@@ -275,7 +287,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr v-for="reporte in reportes" :key="reporte.id" class="table-row">
+                                <tr v-for="reporte in filteredReportes" :key="reporte.id" class="table-row table-row--clickable" @click="openReporteDetail(reporte)">
                                     <td class="table-cell">
                                         <div class="product-name">{{ reporte.producto_nombre }}</div>
                                         <div class="product-sku">{{ reporte.producto_sku }}</div>
@@ -300,24 +312,25 @@
                                             {{ reporte.estado === 'pendiente' ? 'Pendiente' : (reporte.estado === 'revisado' ? 'Revisado' : 'Resuelto') }}
                                         </span>
                                     </td>
-                                    <td class="table-cell is-center">
+                                    <td class="table-cell is-center" @click.stop>
                                         <div class="action-buttons">
-                                            <button v-if="reporte.estado === 'pendiente'" @click="marcarRevisado(reporte)" title="Marcar como revisado" class="action-btn action-btn--verify">
+                                            <button @click="openReporteDetail(reporte)" title="Ver detalles" class="action-btn action-btn--view">
                                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                    <polyline points="20 6 9 17 4 12"/>
+                                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                                    <circle cx="12" cy="12" r="3"/>
                                                 </svg>
                                             </button>
                                         </div>
                                     </td>
                                 </tr>
-                                <tr v-if="reportes.length === 0">
+                                <tr v-if="filteredReportes.length === 0">
                                     <td colspan="7" class="table-cell is-center" style="padding: 40px; color: var(--inventario-text-gray);">
                                         <svg style="width: 48px; height: 48px; margin: 0 auto 12px; display: block; opacity: 0.5;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                             <circle cx="12" cy="12" r="10"></circle>
                                             <line x1="12" y1="8" x2="12" y2="12"></line>
                                             <line x1="12" y1="16" x2="12.01" y2="16"></line>
                                         </svg>
-                                        No hay reportes registrados
+                                        No hay reportes {{ filterReporteEstado ? `con estado "${filterReporteEstado}"` : 'registrados' }}
                                     </td>
                                 </tr>
                             </tbody>
@@ -566,6 +579,133 @@
                 </div>
             </Teleport>
 
+            <!-- Modal de Detalle de Reporte -->
+            <Teleport to="body">
+                <div v-if="showReporteDetailModal" class="modal-overlay" @click.self="closeReporteDetail">
+                    <div class="modal-card modal-card--large">
+                        <div class="modal-header">
+                            <div class="modal-header-text">
+                                <h2 class="modal-title">DETALLE DEL REPORTE</h2>
+                                <p class="modal-subtitle">Información completa del problema reportado</p>
+                            </div>
+                            <button @click="closeReporteDetail" class="modal-close-btn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                        </div>
+                        
+                        <div class="modal-body" v-if="selectedReporte">
+                            <!-- Sección de Información del Producto -->
+                            <div class="detail-section">
+                                <h3 class="section-title">Información del Material</h3>
+                                <div class="detail-grid">
+                                    <div class="detail-item">
+                                        <label class="detail-label">Producto</label>
+                                        <div class="detail-value">{{ selectedReporte.producto_nombre }}</div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <label class="detail-label">SKU</label>
+                                        <div class="detail-value">{{ selectedReporte.producto_sku }}</div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <label class="detail-label">Proyecto</label>
+                                        <div class="detail-value">
+                                            <span class="project-badge">{{ selectedReporte.proyecto_nombre }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <label class="detail-label">Estado Actual</label>
+                                        <div class="detail-value">
+                                            <span class="status-badge" 
+                                                :class="{
+                                                    'pending': selectedReporte.estado === 'pendiente',
+                                                    'reviewed': selectedReporte.estado === 'revisado',
+                                                    'approved': selectedReporte.estado === 'resuelto'
+                                                }">
+                                                {{ selectedReporte.estado === 'pendiente' ? 'Pendiente' : (selectedReporte.estado === 'revisado' ? 'Revisado' : 'Resuelto') }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Sección del Problema -->
+                            <div class="detail-section">
+                                <h3 class="section-title">Problema Reportado</h3>
+                                <div class="detail-item">
+                                    <label class="detail-label">Motivo</label>
+                                    <div class="detail-value detail-value--text">{{ selectedReporte.motivo }}</div>
+                                </div>
+                                <div class="detail-grid">
+                                    <div class="detail-item">
+                                        <label class="detail-label">Reportado por</label>
+                                        <div class="detail-value">{{ selectedReporte.reportado_por }}</div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <label class="detail-label">Fecha de Reporte</label>
+                                        <div class="detail-value">{{ formatDate(selectedReporte.created_at) }}</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Sección de Solución -->
+                            <div class="detail-section">
+                                <h3 class="section-title">Solución</h3>
+                                <div class="form-group">
+                                    <label class="form-label">Descripción de la solución</label>
+                                    <textarea 
+                                        v-model="solucionReporte" 
+                                        class="textarea-field" 
+                                        placeholder="Describe cómo se resolvió el problema o acciones tomadas..."
+                                        rows="4"
+                                        :disabled="selectedReporte.estado === 'resuelto'"
+                                    ></textarea>
+                                </div>
+                                <div v-if="selectedReporte.solucion" class="solution-display">
+                                    <label class="detail-label">Solución Registrada</label>
+                                    <div class="detail-value detail-value--text">{{ selectedReporte.solucion }}</div>
+                                    <div class="solution-meta" v-if="selectedReporte.resuelto_por">
+                                        <span>Resuelto por: <strong>{{ selectedReporte.resuelto_por }}</strong></span>
+                                        <span v-if="selectedReporte.resuelto_at">el {{ formatDate(selectedReporte.resuelto_at) }}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Acciones -->
+                            <div class="modal-actions">
+                                <button @click="closeReporteDetail" class="btn-secondary">
+                                    Cerrar
+                                </button>
+                                <div class="actions-right">
+                                    <button 
+                                        v-if="selectedReporte.estado === 'pendiente'" 
+                                        @click="cambiarEstadoReporte('revisado')" 
+                                        class="btn-warning">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                            <circle cx="12" cy="12" r="3"/>
+                                        </svg>
+                                        Marcar como Revisado
+                                    </button>
+                                    <button 
+                                        v-if="selectedReporte.estado !== 'resuelto'" 
+                                        @click="cambiarEstadoReporte('resuelto')" 
+                                        class="btn-success"
+                                        :disabled="!solucionReporte.trim() && !selectedReporte.solucion">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <polyline points="20 6 9 17 4 12"/>
+                                        </svg>
+                                        Resolver Problema
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </Teleport>
+
         </div>
     </div>
 </template>
@@ -629,17 +769,21 @@ const currentTab = ref('inventario');
 const searchQuery = ref('');
 const filterCategory = ref('');
 const filterStatus = ref('');
+const filterReporteEstado = ref('');
 const openMenuId = ref(null);
 const showModal = ref(false);
 const showLocationModal = ref(false);
 const showVerifyModal = ref(false);
 const showReportModal = ref(false);
+const showReporteDetailModal = ref(false);
 const isEditing = ref(false);
 const selectedReservedItem = ref(null);
 const verifyingProduct = ref(null);
 const reportingProduct = ref(null);
 const reportMotivo = ref('');
 const loadingLocation = ref(false);
+const selectedReporte = ref(null);
+const solucionReporte = ref('');
 
 const form = ref({
     id: null,
@@ -738,6 +882,14 @@ const computedLocationCode = computed(() => {
 
 const computedReservedLocationCode = computed(() => {
     return `${locationForm.value.zona}-${locationForm.value.nivel}-${locationForm.value.posicion}`;
+});
+
+// Computed: Filtered Reportes
+const filteredReportes = computed(() => {
+    if (!filterReporteEstado.value) {
+        return reportes.value;
+    }
+    return reportes.value.filter(r => r.estado === filterReporteEstado.value);
 });
 
 // Actions
@@ -1132,6 +1284,72 @@ const marcarRevisado = async (reporte) => {
         }
     } catch (error) {
         console.error('Error al actualizar reporte:', error);
+        alert('Error al actualizar el reporte');
+    }
+};
+
+// Funciones para el modal de detalle de reporte
+const openReporteDetail = (reporte) => {
+    selectedReporte.value = reporte;
+    solucionReporte.value = reporte.solucion || '';
+    showReporteDetailModal.value = true;
+};
+
+const closeReporteDetail = () => {
+    showReporteDetailModal.value = false;
+    selectedReporte.value = null;
+    solucionReporte.value = '';
+};
+
+const cambiarEstadoReporte = async (nuevoEstado) => {
+    if (!selectedReporte.value) return;
+
+    // Validar que haya solución si se va a resolver
+    if (nuevoEstado === 'resuelto' && !solucionReporte.value.trim() && !selectedReporte.value.solucion) {
+        alert('⚠️ Por favor, describe la solución antes de marcar como resuelto');
+        return;
+    }
+
+    const mensaje = nuevoEstado === 'revisado' 
+        ? `¿Marcar como REVISADO el reporte de "${selectedReporte.value.producto_nombre}"?`
+        : `¿Marcar como RESUELTO el reporte de "${selectedReporte.value.producto_nombre}"?`;
+
+    if (!confirm(mensaje)) {
+        return;
+    }
+
+    try {
+        const body = {
+            estado: nuevoEstado
+        };
+
+        if (nuevoEstado === 'revisado') {
+            body.revisado_por = currentUserName.value;
+        } else if (nuevoEstado === 'resuelto') {
+            body.solucion = solucionReporte.value.trim() || selectedReporte.value.solucion;
+            body.resuelto_por = currentUserName.value;
+        }
+
+        const response = await fetch(`/api/inventario_krsft/reportes/${selectedReporte.value.id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+            },
+            body: JSON.stringify(body)
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            alert(`✓ Reporte marcado como ${nuevoEstado === 'revisado' ? 'REVISADO' : 'RESUELTO'}`);
+            fetchReportes();
+            closeReporteDetail();
+        } else {
+            alert(`❌ Error: ${data.message || 'No se pudo actualizar'}`);
+        }
+    } catch (error) {
+        console.error('Error al cambiar estado del reporte:', error);
         alert('Error al actualizar el reporte');
     }
 };
