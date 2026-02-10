@@ -14,7 +14,11 @@ class InventarioController extends Controller
     public function index()
     {
         $moduleName = basename(dirname(__DIR__));
-        return Inertia::render("{$moduleName}/Index");
+        return Inertia::render("{$moduleName}/Index", [
+            'auth' => [
+                'user' => auth()->user()
+            ]
+        ]);
     }
 
     /**
