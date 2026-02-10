@@ -588,12 +588,6 @@
                                 <h2 class="modal-title">DETALLE DEL REPORTE</h2>
                                 <p class="modal-subtitle">Información completa del problema reportado</p>
                             </div>
-                            <button @click="closeReporteDetail" class="modal-close-btn">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                                </svg>
-                            </button>
                         </div>
                         
                         <div class="modal-body" v-if="selectedReporte">
@@ -1243,7 +1237,6 @@ const confirmReport = async () => {
 
         const data = await response.json();
         if (data.success) {
-            alert('✓ Reporte enviado correctamente');
             closeReportModal();
             fetchReportes();
             currentTab.value = 'reportes';
