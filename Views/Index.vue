@@ -1305,14 +1305,6 @@ const cambiarEstadoReporte = async (nuevoEstado) => {
         return;
     }
 
-    const mensaje = nuevoEstado === 'revisado' 
-        ? `¿Marcar como REVISADO el reporte de "${selectedReporte.value.producto_nombre}"?`
-        : `¿Marcar como RESUELTO el reporte de "${selectedReporte.value.producto_nombre}"?`;
-
-    if (!confirm(mensaje)) {
-        return;
-    }
-
     try {
         const body = {
             estado: nuevoEstado
@@ -1337,7 +1329,6 @@ const cambiarEstadoReporte = async (nuevoEstado) => {
 
         const data = await response.json();
         if (data.success) {
-            alert(`✓ Reporte marcado como ${nuevoEstado === 'revisado' ? 'REVISADO' : 'RESUELTO'}`);
             fetchReportes();
             closeReporteDetail();
         } else {
