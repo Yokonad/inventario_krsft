@@ -68,10 +68,6 @@ export default function InventarioIndex({ auth }) {
                             {SunIcon}
                             {MoonIcon}
                         </button>
-                        <button className="btn-primary" onClick={() => inv.openModal()}>
-                            {PlusIcon}
-                            Nuevo Material
-                        </button>
                     </div>
                 </header>
 
@@ -108,6 +104,7 @@ export default function InventarioIndex({ auth }) {
                             onCategoryChange={inv.setFilterCategory}
                             filterStatus={inv.filterStatus}
                             onStatusChange={inv.setFilterStatus}
+                            onAddClick={() => inv.openModal()}
                         />
                         <InventarioTable
                             filteredItems={inv.filteredItems}

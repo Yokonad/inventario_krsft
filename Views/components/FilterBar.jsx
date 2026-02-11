@@ -1,5 +1,5 @@
 import { CATEGORIES } from '../utils/constants';
-import { SearchIcon } from './Icons';
+import { SearchIcon, PlusIcon } from './Icons';
 
 /**
  * Filter bar for inventory search, category, and status filtering.
@@ -9,6 +9,7 @@ export default function FilterBar({
     searchQuery, onSearchChange,
     filterCategory, onCategoryChange,
     filterStatus, onStatusChange,
+    onAddClick,
 }) {
     return (
         <div className="filter-bar">
@@ -42,6 +43,13 @@ export default function FilterBar({
                     <option value="pendiente">Pendiente</option>
                     <option value="rechazado">Rechazado</option>
                 </select>
+            </div>
+            <div className="filter-field filter-field--action">
+                <label className="filter-label">NUEVO</label>
+                <button className="btn-primary btn-add-filter" onClick={onAddClick}>
+                    {PlusIcon}
+                    <span className="btn-text">Nuevo Material</span>
+                </button>
             </div>
         </div>
     );
