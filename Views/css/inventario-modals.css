@@ -1,7 +1,7 @@
 /* ============================================
    INVENTARIO — MODALS, FORMULARIOS & BOTONES
    Estilos para los 5 modales, campos de formulario,
-   sistema ZNP y botones de acción.
+   sistema ZNP, botones de acción y overrides de inputs.
    ============================================ */
 
 /* ---- Modal overlay (hereda core, agrega blur) ---- */
@@ -175,7 +175,7 @@ body.dark-mode .modal-header {
 .znp-box {
     background: var(--inventario-znp-bg);
     padding: 24px;
-    border-radius: var(--inventario-radius-lg);
+    border-radius: 20px;
     border: 1px solid rgba(74, 144, 226, 0.4);
     margin-top: 10px;
 }
@@ -517,7 +517,7 @@ body.dark-mode .modal-header {
 
 .modal-actions .btn-primary,
 .modal-actions .btn-secondary {
-    border-radius: 30px;
+    border-radius: 12px;
     padding: 12px 28px;
 }
 
@@ -647,3 +647,20 @@ body.dark-mode .modal-header {
         justify-content: center;
     }
 }
+/* ---- Override inputs ubicación (más grandes) ---- */
+.znp-box .input-field--compact {
+    height: 54px;
+    font-size: 1.3rem;
+    font-weight: 700;
+    text-align: center;
+    border-radius: 12px;
+    padding: 5px 15px;
+}
+
+.znp-box .form-label--small {
+    font-size: 0.9rem;
+    color: var(--inventario-primary);
+    margin-bottom: 8px;
+    text-align: center;
+}
+
