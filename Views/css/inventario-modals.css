@@ -186,9 +186,15 @@ body.dark-mode .modal-header {
 
 .location-preview {
     text-align: center;
-    margin-top: 20px;
+    margin-top: 16px;
     padding-top: 16px;
     border-top: 1px dashed var(--inventario-primary);
+}
+
+/* Centrar inputs de ubicación */
+.znp-box .form-row {
+    justify-content: center;
+    gap: 20px;
 }
 
 .location-label {
@@ -510,9 +516,9 @@ body.dark-mode .modal-header {
     display: flex;
     justify-content: flex-end;
     gap: 16px;
-    margin-top: 32px;
-    padding-top: 20px;
-    border-top: 1px solid var(--border-light);
+    margin-top: 24px;
+    padding-top: 0;
+    border-top: none;
 }
 
 .modal-actions .btn-primary,
@@ -647,14 +653,16 @@ body.dark-mode .modal-header {
         justify-content: center;
     }
 }
-/* ---- Override inputs ubicación (más grandes) ---- */
+
+/* ---- Override inputs ubicación (ajustados) ---- */
 .znp-box .input-field--compact {
-    height: 54px;
-    font-size: 1.3rem;
+    height: 48px;
+    font-size: 1.1rem;
     font-weight: 700;
     text-align: center;
     border-radius: 12px;
-    padding: 5px 15px;
+    padding: 5px 12px;
+    min-width: 80px;
 }
 
 .znp-box .form-label--small {
@@ -663,4 +671,3 @@ body.dark-mode .modal-header {
     margin-bottom: 8px;
     text-align: center;
 }
-
