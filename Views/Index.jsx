@@ -38,55 +38,50 @@ import {
     InventarioTabIcon, WarningTriangleIcon,
 } from './components/Icons';
 
-// Tailwind tokens
-import {
-    LAYOUT_CLASSES, HEADER_CLASSES, TAB_CLASSES, BUTTON_CLASSES,
-} from './tokens';
-
 // ============= MAIN COMPONENT =============
 export default function InventarioIndex({ auth }) {
     const inv = useInventarioData(auth);
 
     return (
-        <div className={LAYOUT_CLASSES.viewport}>
+        <div className="inventario-layout">
             {/* Fondo degradado animado del módulo */}
-            <div className={LAYOUT_CLASSES.bg} />
+            <div className="inventario-bg" />
 
-            <div className={LAYOUT_CLASSES.container}>
+            <div className="inventario-container">
                 {/* ====== HEADER ====== */}
-                <header className={HEADER_CLASSES.wrapper}>
-                    <div className={HEADER_CLASSES.left}>
-                        <button onClick={inv.goBack} className={BUTTON_CLASSES.back}>
+                <header className="module-header">
+                    <div className="module-title">
+                        <button onClick={inv.goBack} className="btn-back">
                             {BackIcon}
                             Volver
                         </button>
-                        <h1 className={HEADER_CLASSES.title}>
-                            <span className={HEADER_CLASSES.title_icon}>{BoxIcon}</span>
-                            INVENTARIO DE MATERIALES
-                        </h1>
+                        <div className="title-icon-wrapper">
+                            {BoxIcon}
+                        </div>
+                        <h1>INVENTARIO DE MATERIALES</h1>
                     </div>
                 </header>
 
                 {/* ====== MAIN CONTENT ====== */}
-                <main className={LAYOUT_CLASSES.content}>
+                <main className="module-content">
                     {/* Tabs */}
-                    <div className={TAB_CLASSES.nav}>
+                    <div className="tabs-container">
                         <button
                             onClick={() => inv.setCurrentTab('inventario')}
-                            className={`${TAB_CLASSES.btn}${inv.currentTab === 'inventario' ? ` ${TAB_CLASSES.btn_active}` : ''}`}
+                            className={`tab-button${inv.currentTab === 'inventario' ? ' tab-active' : ''}`}
                         >
                             {InventarioTabIcon}
                             Inventario
-                            <span className={TAB_CLASSES.badge}>{inv.filteredItems.length}</span>
+                            <span className="badge-pill badge-success">{inv.filteredItems.length}</span>
                         </button>
                         <button
                             onClick={() => inv.setCurrentTab('reportes')}
-                            className={`${TAB_CLASSES.btn} ${TAB_CLASSES.btn_reportes}${inv.currentTab === 'reportes' ? ` ${TAB_CLASSES.btn_reportes_active}` : ''}`}
+                            className={`tab-button tab-reportes${inv.currentTab === 'reportes' ? ' tab-active' : ''}`}
                         >
                             {WarningTriangleIcon}
                             Reportes
                             {inv.pendingReportesCount > 0 && (
-                                <span className={`${TAB_CLASSES.badge} ${TAB_CLASSES.badge_alert}`}>{inv.pendingReportesCount}</span>
+                                <span className="badge-pill badge-danger">{inv.pendingReportesCount}</span>
                             )}
                         </button>
                     </div>
