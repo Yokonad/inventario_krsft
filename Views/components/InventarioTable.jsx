@@ -3,10 +3,15 @@ import {
     PinIcon, WarningSmallIcon, DotsIcon,
     DropdownWarningIcon, DropdownVerifyIcon, DropdownEditIcon, DropdownDeleteIcon,
 } from './Icons';
+import {
+    TABLE_CLASSES, BADGE_CLASSES, ACTION_MENU_CLASSES,
+} from '../tokens';
+import { statusBadgeClass } from './utils/classHelpers';
 
 /**
  * Inventory table with action menu dropdowns.
  * Per rerender-memo — isolated from tabs and modals to reduce re-renders.
+ * Styles: Tailwind CSS via tokens.js (NO CSS files).
  */
 export default function InventarioTable({
     filteredItems,
@@ -14,87 +19,86 @@ export default function InventarioTable({
     openReportModal, verifyProduct, openModal, deleteProduct,
 }) {
     return (
-        <div className="table-card">
-            <table className="inventory-table">
-                <thead className="table-head">
+        <div className={TABLE_CLASSES.card}>
+            <table className={TABLE_CLASSES.table}>
+                <thead className={TABLE_CLASSES.head}>
                     <tr>
-                        <th className="table-head-cell">Producto</th>
-                        <th className="table-head-cell">Categoría</th>
-                        <th className="table-head-cell is-center">Cant.</th>
-                        <th className="table-head-cell">Proyecto</th>
-                        <th className="table-head-cell">Ubicación</th>
-                        <th className="table-head-cell is-center">Estado</th>
-                        <th className="table-head-cell is-center">Verificación</th>
-                        <th className="table-head-cell is-center">Acciones</th>
+                        <th className={TABLE_CLASSES.head_cell}>Producto</th>
+                        <th className={TABLE_CLASSES.head_cell}>Categoría</th>
+                        <th className={TABLE_CLASSES.head_cell_center}>Cant.</th>
+                        <th className={TABLE_CLASSES.head_cell}>Proyecto</th>
+                        <th className={TABLE_CLASSES.head_cell}>Ubicación</th>
+                        <th className={TABLE_CLASSES.head_cell_center}>Estado</th>
+                        <th className={TABLE_CLASSES.head_cell_center}>Verificación</th>
+                        <th className={TABLE_CLASSES.head_cell_center}>Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
                     {filteredItems.map((item) => (
-                        <tr key={item.id} className={`table-row${item.apartado ? ' is-apartado' : ''}`}>
-                            <td className="table-cell">
-                                <div className="product-name">{item.nombre}</div>
-                                <div className="product-sku">{item.sku}</div>
+                        <tr key={item.id} className={`${TABLE_CLASSES.row}${item.apartado ? ` ${TABLE_CLASSES.row_apartado}` : ''}`}>
+                            <td className={TABLE_CLASSES.cell}>
+                                <div className={TABLE_CLASSES.product_name}>{item.nombre}</div>
+                                <div className={TABLE_CLASSES.product_sku}>{item.sku}</div>
                             </td>
-                            <td className="table-cell">{item.categoria}</td>
-                            <td className="table-cell is-center">{item.cantidad}</td>
-                            <td className="table-cell">
+                            <td className={TABLE_CLASSES.cell}>{item.categoria}</td>
+                            <td className={TABLE_CLASSES.cell_center}>{item.cantidad}</td>
+                            <td className={TABLE_CLASSES.cell}>
                                 {item.apartado ? (
-                                    <div className="apartado-info">
-                                        <span className="apartado-badge">
+                                    <div className="flex items-center gap-2">
+                                        <span className={BADGE_CLASSES.apartado}>
                                             {PinIcon}
                                             APARTADO
                                         </span>
-                                        <span className="project-pill" style={getProjectPillStyle(item)}>
+                                        {/* project-pill usa color dinámico — excepción técnica documentada en styles.config.js */}
+                                        <span className={BADGE_CLASSES.project_pill} style={getProjectPillStyle(item)}>
                                             {item.nombre_proyecto}
                                         </span>
                                     </div>
                                 ) : (
-                                    <span className="text-muted">-</span>
+                                    <span className={TABLE_CLASSES.text_muted}>-</span>
                                 )}
                             </td>
-                            <td className="table-cell">
+                            <td className={TABLE_CLASSES.cell}>
                                 {item.ubicacion ? (
-                                    <span className="location-code">{item.ubicacion}</span>
+                                    <span className={BADGE_CLASSES.location_code}>{item.ubicacion}</span>
                                 ) : item.apartado ? (
-                                    <div className="pending-info">
+                                    <div className={BADGE_CLASSES.pending_info}>
                                         {WarningSmallIcon}
                                         Pendiente
                                     </div>
                                 ) : (
-                                    <span className="text-muted">-</span>
+                                    <span className={TABLE_CLASSES.text_muted}>-</span>
                                 )}
                             </td>
-                            <td className="table-cell is-center">
-                                <span
-                                    className={`status-badge${item.estado === 'activo' ? ' approved' : item.estado === 'pendiente' ? ' pending' : ' rejected'}`}
-                                >
+                            <td className={TABLE_CLASSES.cell_center}>
+                                <span className={statusBadgeClass(item.estado)}>
                                     {item.estado === 'activo' ? 'Aprobado' : item.estado === 'pendiente' ? 'Sin Aprobar' : 'Rechazado'}
                                 </span>
                             </td>
-                            <td className="table-cell is-center">
+                            <td className={TABLE_CLASSES.cell_center}>
                                 {item.verificado_at ? (
-                                    <div className="verification-info" title={`Verificado por: ${item.verificado_por}`}>
-                                        <span className="verification-date">{formatDate(item.verificado_at)}</span>
+                                    <div className="relative inline-block cursor-help" title={`Verificado por: ${item.verificado_por}`}>
+                                        <span className={BADGE_CLASSES.verified}>{formatDate(item.verificado_at)}</span>
                                     </div>
                                 ) : (
-                                    <span className="text-muted">-</span>
+                                    <span className={TABLE_CLASSES.text_muted}>-</span>
                                 )}
                             </td>
-                            <td className="table-cell is-center">
-                                <div className="action-menu-wrapper">
+                            <td className={TABLE_CLASSES.cell_center}>
+                                <div className={ACTION_MENU_CLASSES.wrapper}>
                                     <button
                                         onClick={() => setOpenMenuId(openMenuId === item.id ? null : item.id)}
-                                        className="action-menu-trigger"
+                                        className={ACTION_MENU_CLASSES.trigger}
                                         title="Opciones"
                                     >
                                         {DotsIcon}
                                     </button>
                                     {openMenuId === item.id && (
-                                        <div className="action-dropdown">
+                                        <div className={ACTION_MENU_CLASSES.dropdown}>
                                             {item.apartado && item.nombre_proyecto && (
                                                 <button
                                                     onClick={() => { openReportModal(item); setOpenMenuId(null); }}
-                                                    className="dropdown-item dropdown-item--report"
+                                                    className={`${ACTION_MENU_CLASSES.item} ${ACTION_MENU_CLASSES.item_report}`}
                                                 >
                                                     {DropdownWarningIcon}
                                                     <span>Reportar Problema</span>
@@ -102,21 +106,21 @@ export default function InventarioTable({
                                             )}
                                             <button
                                                 onClick={() => { verifyProduct(item); setOpenMenuId(null); }}
-                                                className="dropdown-item dropdown-item--verify"
+                                                className={`${ACTION_MENU_CLASSES.item} ${ACTION_MENU_CLASSES.item_verify}`}
                                             >
                                                 {DropdownVerifyIcon}
                                                 <span>Verificar</span>
                                             </button>
                                             <button
                                                 onClick={() => { openModal(item); setOpenMenuId(null); }}
-                                                className="dropdown-item dropdown-item--edit"
+                                                className={`${ACTION_MENU_CLASSES.item} ${ACTION_MENU_CLASSES.item_edit}`}
                                             >
                                                 {DropdownEditIcon}
                                                 <span>Editar</span>
                                             </button>
                                             <button
                                                 onClick={() => { deleteProduct(item); setOpenMenuId(null); }}
-                                                className="dropdown-item dropdown-item--delete"
+                                                className={`${ACTION_MENU_CLASSES.item} ${ACTION_MENU_CLASSES.item_delete}`}
                                             >
                                                 {DropdownDeleteIcon}
                                                 <span>Eliminar</span>
@@ -131,14 +135,14 @@ export default function InventarioTable({
             </table>
 
             {/* Pagination */}
-            <div className="pagination">
-                <div className="pagination-info">
-                    Mostrando <strong>1-{filteredItems.length}</strong> de <strong>{filteredItems.length}</strong> resultados
+            <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100 bg-gray-50">
+                <div className="text-sm text-gray-500">
+                    Mostrando <strong className="text-gray-700">1-{filteredItems.length}</strong> de <strong className="text-gray-700">{filteredItems.length}</strong> resultados
                 </div>
-                <div className="pagination-actions">
-                    <button disabled className="pagination-btn is-disabled">&lt; Anterior</button>
-                    <button className="pagination-btn is-active">1</button>
-                    <button disabled className="pagination-btn is-disabled">Siguiente &gt;</button>
+                <div className="flex items-center gap-1">
+                    <button disabled className="px-3 py-1.5 text-sm rounded-md border border-gray-200 text-gray-400 cursor-not-allowed">{'<'} Anterior</button>
+                    <button className="px-3 py-1.5 text-sm rounded-md bg-blue-500 text-white font-semibold border border-blue-500">1</button>
+                    <button disabled className="px-3 py-1.5 text-sm rounded-md border border-gray-200 text-gray-400 cursor-not-allowed">Siguiente {'>'}</button>
                 </div>
             </div>
         </div>

@@ -86,7 +86,7 @@ export function useInventarioData(auth) {
     // ========== DATA FETCHING (per async-parallel) ==========
     const fetchProducts = useCallback(async () => {
         try {
-            const data = await fetchJson('/api/inventario_krsft/list');
+            const data = await fetchJson('/api/inventariokrsft/list');
             if (data.success) {
                 const newProducts = data.products || [];
                 if (!arraysEqual(productsRef.current, newProducts)) {
@@ -101,7 +101,7 @@ export function useInventarioData(auth) {
 
     const fetchReservedItems = useCallback(async () => {
         try {
-            const data = await fetchJson('/api/inventario_krsft/reserved-items');
+            const data = await fetchJson('/api/inventariokrsft/reserved-items');
             if (data.success) {
                 const newItems = data.reserved_items || [];
                 if (!arraysEqual(reservedRef.current, newItems)) {
@@ -116,7 +116,7 @@ export function useInventarioData(auth) {
 
     const fetchReportes = useCallback(async () => {
         try {
-            const data = await fetchJson('/api/inventario_krsft/reportes');
+            const data = await fetchJson('/api/inventariokrsft/reportes');
             if (data.success) {
                 setReportes(data.reportes || []);
             }
@@ -178,7 +178,7 @@ export function useInventarioData(auth) {
         }
         try {
             const ubicacion = `${form.zona}-${form.nivel}-${form.posicion}`;
-            const url = isEditing ? `/api/inventario_krsft/${form.id}` : '/api/inventario_krsft/create';
+            const url = isEditing ? `/api/inventariokrsft/${form.id}` : '/api/inventariokrsft/create';
             const method = isEditing ? 'PUT' : 'POST';
 
             const data = await fetchJson(url, {
@@ -214,7 +214,7 @@ export function useInventarioData(auth) {
     const deleteProduct = useCallback(async (item) => {
         if (!confirm(`¿Estás seguro de eliminar "${item.nombre}"?`)) return;
         try {
-            const data = await fetchJson(`/api/inventario_krsft/${item.id}`, { method: 'DELETE' });
+            const data = await fetchJson(`/api/inventariokrsft/${item.id}`, { method: 'DELETE' });
             if (data.success) {
                 alert('✓ Producto eliminado correctamente');
                 fetchProducts();
@@ -236,7 +236,7 @@ export function useInventarioData(auth) {
             return;
         }
         try {
-            const data = await fetchJson('/api/inventario_krsft/assign-location', {
+            const data = await fetchJson('/api/inventariokrsft/assign-location', {
                 method: 'POST',
                 body: JSON.stringify({
                     product_id: selectedReservedItem.id,
@@ -272,7 +272,7 @@ export function useInventarioData(auth) {
     const confirmVerify = useCallback(async () => {
         if (!verifyingProduct) return;
         try {
-            const data = await fetchJson(`/api/inventario_krsft/verify/${verifyingProduct.id}`, {
+            const data = await fetchJson(`/api/inventariokrsft/verify/${verifyingProduct.id}`, {
                 method: 'POST',
                 body: JSON.stringify({ usuario: currentUserName }),
             });
@@ -309,7 +309,7 @@ export function useInventarioData(auth) {
             return;
         }
         try {
-            const data = await fetchJson('/api/inventario_krsft/reportes', {
+            const data = await fetchJson('/api/inventariokrsft/reportes', {
                 method: 'POST',
                 body: JSON.stringify({
                     producto_id: reportingProduct.id,
@@ -357,7 +357,7 @@ export function useInventarioData(auth) {
                 body.resuelto_por = currentUserName;
             }
 
-            const data = await fetchJson(`/api/inventario_krsft/reportes/${selectedReporte.id}`, {
+            const data = await fetchJson(`/api/inventariokrsft/reportes/${selectedReporte.id}`, {
                 method: 'PUT',
                 body: JSON.stringify(body),
             });
@@ -377,7 +377,7 @@ export function useInventarioData(auth) {
         if (!selectedReporte) return;
         if (!confirm(`¿Está seguro de que desea eliminar el reporte de "${selectedReporte.producto_nombre}"? Esta acción no se puede deshacer.`)) return;
         try {
-            const data = await fetchJson(`/api/inventario_krsft/reportes/${selectedReporte.id}`, { method: 'DELETE' });
+            const data = await fetchJson(`/api/inventariokrsft/reportes/${selectedReporte.id}`, { method: 'DELETE' });
             if (data.success) {
                 alert('✓ Reporte eliminado correctamente');
                 fetchReportes();

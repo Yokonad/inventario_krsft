@@ -30,12 +30,23 @@ class Producto extends Model
         'amount',
         'amount_pen',
         'verificado_at',
-        'verificado_por'
+        'verificado_por',
     ];
 
     protected $casts = [
-        'apartado' => 'boolean',
-        'cantidad' => 'integer',
-        'precio' => 'float'
+        'apartado'      => 'boolean',
+        'cantidad'      => 'integer',
+        'precio'        => 'float',
+        'amount'        => 'float',
+        'amount_pen'    => 'float',
+        'verificado_at' => 'datetime',   // Fix: campo datetime sin cast causaba errores de serialización
     ];
+
+    /**
+     * Relación con reportes del producto.
+     */
+    public function reportes()
+    {
+        return $this->hasMany(Reporte::class, 'producto_id');
+    }
 }

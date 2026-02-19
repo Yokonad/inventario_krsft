@@ -4,7 +4,7 @@
  * Slim entry component that composes hooks, UI components, and modals.
  * All business logic lives in hooks/useInventarioData.
  * All SVG icons live in components/Icons.jsx.
- * All CSS is split into modular files under css/.
+ * All styles use Tailwind CSS via tokens.js (NO CSS files).
  *
  * Per Vercel React best practices:
  * - bundle-barrel-imports: Direct imports, no barrel re-exports
@@ -12,7 +12,6 @@
  * - rendering-hoist-jsx: All static JSX (icons) hoisted outside
  * - async-parallel: Data fetching uses Promise.all in custom hook
  */
-import { useDarkMode } from './hooks/useDarkMode';
 import { useInventarioData } from './hooks/useInventarioData';
 
 // UI Components
@@ -29,74 +28,65 @@ import ReporteDetailModal from './components/modals/ReporteDetailModal';
 
 // Icons
 import {
-    BackIcon, BoxIcon, SunIcon, MoonIcon, PlusIcon,
+    BackIcon, BoxIcon, PlusIcon,
     InventarioTabIcon, WarningTriangleIcon,
 } from './components/Icons';
 
-// CSS — theme + modular styles
-import './inventario_theme.css';
-import './css/inventario-base.css';
-import './css/inventario-table.css';
-import './css/inventario-modals.css';
-import './css/inventario-reportes.css';
+// Tailwind tokens
+import {
+    LAYOUT_CLASSES, HEADER_CLASSES, TAB_CLASSES, BUTTON_CLASSES,
+} from './tokens';
 
 // ============= MAIN COMPONENT =============
 export default function InventarioIndex({ auth }) {
-    const { toggleDarkMode } = useDarkMode();
-
     const inv = useInventarioData(auth);
 
     return (
-        <div className="marketplace-layout">
-            <div className="inventario-bg" />
+        <div className={LAYOUT_CLASSES.viewport}>
+            {/* Fondo degradado animado del módulo */}
+            <div className={LAYOUT_CLASSES.bg} />
 
-            <div className="marketplace-container">
+            <div className={LAYOUT_CLASSES.container}>
                 {/* ====== HEADER ====== */}
-                <header className="module-header">
-                    <div className="header-left">
-                        <button onClick={inv.goBack} className="btn-primary btn-back">
+                <header className={HEADER_CLASSES.wrapper}>
+                    <div className={HEADER_CLASSES.left}>
+                        <button onClick={inv.goBack} className={BUTTON_CLASSES.back}>
                             {BackIcon}
                             Volver
                         </button>
-                        <h1>
-                            {BoxIcon}
+                        <h1 className={HEADER_CLASSES.title}>
+                            <span className={HEADER_CLASSES.title_icon}>{BoxIcon}</span>
                             INVENTARIO DE MATERIALES
                         </h1>
-                    </div>
-                    <div className="header-right">
-                        <button onClick={toggleDarkMode} className="theme-toggle" title="Cambiar tema">
-                            {SunIcon}
-                            {MoonIcon}
-                        </button>
                     </div>
                 </header>
 
                 {/* ====== MAIN CONTENT ====== */}
-                <main className="module-content">
+                <main className={LAYOUT_CLASSES.content}>
                     {/* Tabs */}
-                    <div className="tabs-nav">
+                    <div className={TAB_CLASSES.nav}>
                         <button
                             onClick={() => inv.setCurrentTab('inventario')}
-                            className={`tab-btn${inv.currentTab === 'inventario' ? ' is-active' : ''}`}
+                            className={`${TAB_CLASSES.btn}${inv.currentTab === 'inventario' ? ` ${TAB_CLASSES.btn_active}` : ''}`}
                         >
                             {InventarioTabIcon}
                             Inventario
-                            <span className="tab-badge">{inv.filteredItems.length}</span>
+                            <span className={TAB_CLASSES.badge}>{inv.filteredItems.length}</span>
                         </button>
                         <button
                             onClick={() => inv.setCurrentTab('reportes')}
-                            className={`tab-btn tab-btn--reportes${inv.currentTab === 'reportes' ? ' is-active' : ''}`}
+                            className={`${TAB_CLASSES.btn} ${TAB_CLASSES.btn_reportes}${inv.currentTab === 'reportes' ? ` ${TAB_CLASSES.btn_reportes_active}` : ''}`}
                         >
                             {WarningTriangleIcon}
                             Reportes
                             {inv.pendingReportesCount > 0 && (
-                                <span className="tab-badge tab-badge--alert">{inv.pendingReportesCount}</span>
+                                <span className={`${TAB_CLASSES.badge} ${TAB_CLASSES.badge_alert}`}>{inv.pendingReportesCount}</span>
                             )}
                         </button>
                     </div>
 
                     {/* ====== TAB: INVENTARIO ====== */}
-                    <div className="tab-content" style={{ display: inv.currentTab === 'inventario' ? 'block' : 'none' }}>
+                    <div className={inv.currentTab === 'inventario' ? 'block' : 'hidden'}>
                         <FilterBar
                             searchQuery={inv.searchQuery}
                             onSearchChange={inv.setSearchQuery}
@@ -118,7 +108,7 @@ export default function InventarioIndex({ auth }) {
                     </div>
 
                     {/* ====== TAB: REPORTES ====== */}
-                    <div className="tab-content" style={{ display: inv.currentTab === 'reportes' ? 'block' : 'none' }}>
+                    <div className={inv.currentTab === 'reportes' ? 'block' : 'hidden'}>
                         <ReportesTab
                             reportes={inv.reportes}
                             filteredReportes={inv.filteredReportes}
