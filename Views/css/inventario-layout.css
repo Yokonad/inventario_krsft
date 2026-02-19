@@ -181,6 +181,32 @@ svg {
     flex-shrink: 0;
 }
 
+.filter-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 200px;
+}
+
+.filter-field-search {
+    flex: 2;
+    min-width: 300px;
+}
+
+.filter-field-action {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+
+.filter-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
 .filter-input-wrapper.with-border {
     position: relative;
     flex: 1;
