@@ -135,14 +135,20 @@ export default function InventarioTable({
             </table>
 
             {/* Pagination */}
-            <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100 bg-gray-50">
-                <div className="text-sm text-gray-500">
-                    Mostrando <strong className="text-gray-700">1-{filteredItems.length}</strong> de <strong className="text-gray-700">{filteredItems.length}</strong> resultados
+            <div className="flex items-center justify-between px-6 py-4 border-t-2 border-gray-100 bg-gradient-to-r from-gray-50 to-blue-50/30">
+                <div className="text-sm text-gray-600 font-semibold">
+                    Mostrando <span className="text-blue-600 font-bold">{filteredItems.length}</span> de <span className="text-blue-600 font-bold">{filteredItems.length}</span> resultados
                 </div>
-                <div className="flex items-center gap-1">
-                    <button disabled className="px-3 py-1.5 text-sm rounded-md border border-gray-200 text-gray-400 cursor-not-allowed">{'<'} Anterior</button>
-                    <button className="px-3 py-1.5 text-sm rounded-md bg-blue-500 text-white font-semibold border border-blue-500">1</button>
-                    <button disabled className="px-3 py-1.5 text-sm rounded-md border border-gray-200 text-gray-400 cursor-not-allowed">Siguiente {'>'}</button>
+                <div className="flex items-center gap-2">
+                    <button disabled className="px-4 py-2 text-sm font-bold rounded-lg border-2 border-gray-200 text-gray-400 cursor-not-allowed bg-white">
+                        ← Anterior
+                    </button>
+                    <button className="px-4 py-2 text-sm rounded-lg bg-blue-500 text-white font-bold border-2 border-blue-500 shadow-md">
+                        1
+                    </button>
+                    <button disabled className="px-4 py-2 text-sm font-bold rounded-lg border-2 border-gray-200 text-gray-400 cursor-not-allowed bg-white">
+                        Siguiente →
+                    </button>
                 </div>
             </div>
         </div>

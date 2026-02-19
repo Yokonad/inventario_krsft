@@ -3,6 +3,8 @@
 // Utilidades para combinar y condicionar clases Tailwind
 // ════════════════════════════════════════════════════════════════
 
+import { BADGE_CLASSES } from '../../tokens';
+
 /**
  * Combina múltiples clases Tailwind, filtrando valores falsy.
  * @param {...string} classes - Clases a combinar
@@ -50,15 +52,14 @@ export const tabClass = (isActive, activeClass, baseClass) =>
  * @returns {string}
  */
 export const statusBadgeClass = (status) => {
-    const base = 'inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold uppercase tracking-wide border';
     const variants = {
-        activo: 'bg-green-100 text-green-600 border-green-200',
-        pendiente: 'bg-yellow-100 text-yellow-600 border-yellow-200',
-        rechazado: 'bg-red-100 text-red-500 border-red-200',
-        revisado: 'bg-yellow-100 text-yellow-600 border-yellow-200',
-        resuelto: 'bg-green-100 text-green-600 border-green-200',
+        activo: BADGE_CLASSES.approved,
+        pendiente: BADGE_CLASSES.pending,
+        rechazado: BADGE_CLASSES.rejected,
+        revisado: BADGE_CLASSES.reviewed,
+        resuelto: BADGE_CLASSES.approved,
     };
-    return `${base} ${variants[status] || variants.pendiente}`;
+    return variants[status] || BADGE_CLASSES.pending;
 };
 
 /**
@@ -67,11 +68,10 @@ export const statusBadgeClass = (status) => {
  * @returns {string}
  */
 export const reporteBadgeClass = (estado) => {
-    const base = 'inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide border';
     const variants = {
-        pendiente: 'bg-yellow-100 text-yellow-600 border-yellow-200',
-        revisado: 'bg-blue-100 text-blue-500 border-blue-200',
-        resuelto: 'bg-green-100 text-green-600 border-green-200',
+        pendiente: BADGE_CLASSES.pending,
+        revisado: BADGE_CLASSES.reviewed,
+        resuelto: BADGE_CLASSES.approved,
     };
-    return `${base} ${variants[estado] || variants.pendiente}`;
+    return variants[estado] || BADGE_CLASSES.pending;
 };

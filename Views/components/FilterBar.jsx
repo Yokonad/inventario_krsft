@@ -15,9 +15,10 @@ export default function FilterBar({
 }) {
     return (
         <div className={FILTER_CLASSES.bar}>
-            <div className={`${FILTER_CLASSES.field} ${FILTER_CLASSES.field_search}`}>
-                <label className={FILTER_CLASSES.label}>BUSCAR</label>
+            <div className={FILTER_CLASSES.field_search}>
+                <label className={FILTER_CLASSES.label}>🔍 Buscar</label>
                 <div className={FILTER_CLASSES.input_wrapper}>
+                    <span className={FILTER_CLASSES.search_icon}>{SearchIcon}</span>
                     <input
                         type="text"
                         placeholder="Buscar por nombre..."
@@ -25,11 +26,10 @@ export default function FilterBar({
                         value={searchQuery}
                         onChange={(e) => onSearchChange(e.target.value)}
                     />
-                    <span className={FILTER_CLASSES.search_icon}>{SearchIcon}</span>
                 </div>
             </div>
             <div className={FILTER_CLASSES.field}>
-                <label className={FILTER_CLASSES.label}>CATEGORÍA</label>
+                <label className={FILTER_CLASSES.label}>📁 Categoría</label>
                 <select className={FILTER_CLASSES.select} value={filterCategory} onChange={(e) => onCategoryChange(e.target.value)}>
                     <option value="">Todas</option>
                     {CATEGORIES.map((cat) => (
@@ -38,7 +38,7 @@ export default function FilterBar({
                 </select>
             </div>
             <div className={FILTER_CLASSES.field}>
-                <label className={FILTER_CLASSES.label}>ESTADO</label>
+                <label className={FILTER_CLASSES.label}>📊 Estado</label>
                 <select className={FILTER_CLASSES.select} value={filterStatus} onChange={(e) => onStatusChange(e.target.value)}>
                     <option value="">Todos</option>
                     <option value="activo">Activo</option>
@@ -47,7 +47,7 @@ export default function FilterBar({
                 </select>
             </div>
             <div className={FILTER_CLASSES.field_action}>
-                <label className={FILTER_CLASSES.label}>NUEVO</label>
+                <label className={FILTER_CLASSES.label}>✨ Nuevo</label>
                 <button className={FILTER_CLASSES.add_btn} onClick={onAddClick}>
                     {PlusIcon}
                     <span>Nuevo Material</span>
