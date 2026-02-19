@@ -42,11 +42,11 @@
     color: white;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    background: #0AA4A4;
     position: sticky;
     top: 0;
     z-index: 10;
-    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
+    box-shadow: 0 2px 8px rgba(10, 164, 164, 0.2);
 }
 
 .data-table th:first-child {
@@ -82,7 +82,7 @@
     width: 44px;
     height: 44px;
     border-radius: 50%;
-    background: #3b82f6;
+    background: #0AA4A4;
     color: white;
     display: flex;
     align-items: center;
@@ -90,7 +90,7 @@
     font-weight: 700;
     font-size: 1rem;
     flex-shrink: 0;
-    box-shadow: 0 4px 10px rgba(59, 130, 246, 0.2);
+    box-shadow: 0 4px 10px rgba(10, 164, 164, 0.2);
     border: 2px solid white;
 }
 
@@ -286,13 +286,13 @@
 /* Location code badge */
 .location-code {
     font-family: 'JetBrains Mono', monospace;
-    background: rgba(59, 130, 246, 0.1);
-    color: #3b82f6;
+    background: rgba(10, 164, 164, 0.1);
+    color: #0AA4A4;
     padding: 4px 8px;
     border-radius: 6px;
     font-weight: 700;
     font-size: 0.8rem;
-    border: 1px dashed #93c5fd;
+    border: 1px dashed #5ee5e5;
 }
 
 /* Project pill */
@@ -325,8 +325,8 @@
 
 .action-menu-trigger:hover {
     background: #f8fafc;
-    border-color: #3b82f6;
-    color: #3b82f6;
+    border-color: #0AA4A4;
+    color: #0AA4A4;
 }
 
 .action-menu-dropdown {
@@ -397,11 +397,11 @@
 }
 
 .action-menu-item--edit {
-    color: #3b82f6;
+    color: #0AA4A4;
 }
 
 .action-menu-item--edit:hover {
-    background: rgba(59, 130, 246, 0.1);
+    background: rgba(10, 164, 164, 0.1);
 }
 
 .action-menu-item--delete {
