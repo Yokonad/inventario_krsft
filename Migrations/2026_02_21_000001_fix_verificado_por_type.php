@@ -4,26 +4,23 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
+/**
+ * Corrige el tipo de la columna verificado_por de integer a string.
+ * El código espera guardar el nombre del usuario (string), no un ID.
+ */
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::table('inventario_productos', function (Blueprint $table) {
-            $table->timestamp('verificado_at')->nullable()->after('updated_at');
-            $table->string('verificado_por')->nullable()->after('verificado_at');
+            $table->string('verificado_por', 255)->nullable()->change();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::table('inventario_productos', function (Blueprint $table) {
-            $table->dropColumn(['verificado_at', 'verificado_por']);
+            $table->unsignedBigInteger('verificado_por')->nullable()->change();
         });
     }
 };

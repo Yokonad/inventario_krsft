@@ -18,6 +18,7 @@ export const PROJECT_COLORS = [
 
 export const INITIAL_FORM = {
     id: null, nombre: '', categoria: '', unidad: '', cantidad: 1,
+    precio: '',
     zona: 'A', nivel: 1, posicion: 1,
 };
 

@@ -6,7 +6,7 @@
     "description": "Sistema de control de inventario y stock. v3.3.1: Mejora visual de inputs con borde gris claro más visible.",
     "icon": "icon.svg",
     "color": "#4A90E2",
-    "gradient": "linear-gradient(135deg, #4A90E2, #9013FE)",
+    "gradient": "#4A90E2",
     "author": "yokonad",
     "enabled": true,
     "allowed_cargos": [

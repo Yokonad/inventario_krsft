@@ -18,10 +18,11 @@ export const loadFromCache = (key) => {
 export const arraysEqual = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
 // ============= UTILITY HELPERS (per js-early-exit) =============
+import { formatDate as _fmtDate } from '@/services/DateTimeService';
+
 export const formatDate = (dateString) => {
     if (!dateString) return '-';
-    const date = new Date(dateString);
-    return `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`;
+    return _fmtDate(dateString);
 };
 
 export const getProjectPillStyle = (item) => {
