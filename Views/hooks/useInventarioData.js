@@ -23,6 +23,9 @@ export function useInventarioData(auth) {
     const [showVerifyModal, setShowVerifyModal] = useState(false);
     const [showReportModal, setShowReportModal] = useState(false);
     const [showReporteDetailModal, setShowReporteDetailModal] = useState(false);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [pendingDeleteItem, setPendingDeleteItem] = useState(null);
+    const [showDeleteReporteModal, setShowDeleteReporteModal] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [selectedReservedItem, setSelectedReservedItem] = useState(null);
     const [verifyingProduct, setVerifyingProduct] = useState(null);
@@ -32,13 +35,6 @@ export function useInventarioData(auth) {
     const [solucionReporte, setSolucionReporte] = useState('');
     const [form, setForm] = useState(INITIAL_FORM);
     const [locationForm, setLocationForm] = useState(INITIAL_LOCATION_FORM);
-
-    // ── Asignaciones a proyectos ───
-    const [assignments, setAssignments] = useState({});
-    const [usage, setUsage] = useState({});
-    const [projects, setProjects] = useState([]);
-    const [showAssignModal, setShowAssignModal] = useState(false);
-    const [assigningProduct, setAssigningProduct] = useState(null);
 
     // Refs for polling and stable references (per rerender-use-ref-transient-values)
     const pollingRef = useRef(null);
@@ -63,7 +59,7 @@ export function useInventarioData(auth) {
         const allItems = [...products, ...reservedItems];
         const q = searchQuery.toLowerCase();
         return allItems.filter((item) => {
-            const matchSearch = !q || item.nombre.toLowerCase().includes(q) || item.sku.toLowerCase().includes(q);
+            const matchSearch = !q || item.nombre?.toLowerCase().includes(q) || item.sku?.toLowerCase().includes(q) || item.material_type?.toLowerCase().includes(q);
             const matchCat = !filterCategory || item.categoria === filterCategory;
             const matchStatus = !filterStatus || item.estado === filterStatus;
             return matchSearch && matchCat && matchStatus;
@@ -132,36 +128,13 @@ export function useInventarioData(auth) {
         }
     }, []);
 
-    // ── Asignaciones a proyectos ───
-    const assignmentsRef = useRef(assignments);
-    assignmentsRef.current = assignments;
-
-    const fetchAssignments = useCallback(async () => {
-        try {
-            const data = await fetchJson('/api/inventariokrsft/assignments/all');
-            if (data.success) {
-                setAssignments(data.assignments || {});
-                setUsage(data.usage || {});
-            }
-        } catch (error) {
-            console.error('Error fetching assignments:', error);
-        }
-    }, []);
-
-    const fetchProjects = useCallback(async () => {
-        try {
-            const data = await fetchJson('/api/inventariokrsft/projects');
-            if (data.success) {
-                setProjects(data.projects || []);
-            }
-        } catch (error) {
-            console.error('Error fetching projects:', error);
-        }
-    }, []);
-
     const fetchAll = useCallback(() => {
-        Promise.all([fetchProducts(), fetchReservedItems(), fetchReportes(), fetchAssignments()]);
-    }, [fetchProducts, fetchReservedItems, fetchReportes, fetchAssignments]);
+        Promise.all([
+            fetchProducts(),
+            fetchReservedItems(),
+            fetchReportes(),
+        ]);
+    }, [fetchProducts, fetchReservedItems, fetchReportes]);
 
     // ========== NAVIGATION ==========
     const goBack = useCallback(() => {
@@ -175,7 +148,8 @@ export function useInventarioData(auth) {
             const parts = item.ubicacion ? item.ubicacion.split('-') : ['A', '1', '1'];
             setForm({
                 id: item.id,
-                nombre: item.nombre,
+                nombre: item.nombre || '',
+                descripcion: item.descripcion || '',
                 categoria: item.categoria,
                 unidad: item.unidad,
                 cantidad: item.cantidad,
@@ -207,7 +181,7 @@ export function useInventarioData(auth) {
     // ========== CRUD: Save Material ==========
     const saveMaterial = useCallback(async (e) => {
         e.preventDefault();
-        if (!form.nombre || !form.categoria || !form.unidad) {
+        if (!form.categoria || !form.unidad) {
             alert('Por favor completa todos los campos requeridos');
             return;
         }
@@ -220,7 +194,8 @@ export function useInventarioData(auth) {
                 method,
                 body: JSON.stringify({
                     nombre: form.nombre,
-                    descripcion: form.nombre,
+                    material_type: form.nombre || null,
+                    descripcion: form.descripcion,
                     sku: `SKU-${Date.now()}`,
                     categoria: form.categoria,
                     unidad: form.unidad,
@@ -246,12 +221,22 @@ export function useInventarioData(auth) {
     }, [form, isEditing, closeModal, fetchProducts]);
 
     // ========== CRUD: Delete Product ==========
-    const deleteProduct = useCallback(async (item) => {
-        if (!confirm(`¿Estás seguro de eliminar "${item.nombre}"?`)) return;
+    const deleteProduct = useCallback((item) => {
+        setPendingDeleteItem(item);
+        setShowDeleteModal(true);
+    }, []);
+
+    const cancelDeleteProduct = useCallback(() => {
+        setShowDeleteModal(false);
+        setPendingDeleteItem(null);
+    }, []);
+
+    const confirmDeleteProduct = useCallback(async () => {
+        if (!pendingDeleteItem) return;
         try {
-            const data = await fetchJson(`/api/inventariokrsft/${item.id}`, { method: 'DELETE' });
+            const data = await fetchJson(`/api/inventariokrsft/${pendingDeleteItem.id}`, { method: 'DELETE' });
             if (data.success) {
-                alert('✓ Producto eliminado correctamente');
+                cancelDeleteProduct();
                 fetchProducts();
                 fetchReservedItems();
             } else {
@@ -261,7 +246,7 @@ export function useInventarioData(auth) {
             console.error('Error al eliminar producto:', error);
             alert('Error al eliminar el producto');
         }
-    }, [fetchProducts, fetchReservedItems]);
+    }, [pendingDeleteItem, cancelDeleteProduct, fetchProducts, fetchReservedItems]);
 
     // ========== CRUD: Save Location ==========
     const saveLocation = useCallback(async (e) => {
@@ -408,13 +393,21 @@ export function useInventarioData(auth) {
         }
     }, [selectedReporte, solucionReporte, currentUserName, fetchReportes, closeReporteDetail]);
 
-    const eliminarReporte = useCallback(async () => {
+    const eliminarReporte = useCallback(() => {
         if (!selectedReporte) return;
-        if (!confirm(`¿Está seguro de que desea eliminar el reporte de "${selectedReporte.producto_nombre}"? Esta acción no se puede deshacer.`)) return;
+        setShowDeleteReporteModal(true);
+    }, [selectedReporte]);
+
+    const cancelEliminarReporte = useCallback(() => {
+        setShowDeleteReporteModal(false);
+    }, []);
+
+    const confirmEliminarReporte = useCallback(async () => {
+        if (!selectedReporte) return;
         try {
             const data = await fetchJson(`/api/inventariokrsft/reportes/${selectedReporte.id}`, { method: 'DELETE' });
             if (data.success) {
-                alert('✓ Reporte eliminado correctamente');
+                cancelEliminarReporte();
                 fetchReportes();
                 closeReporteDetail();
             } else {
@@ -424,64 +417,7 @@ export function useInventarioData(auth) {
             console.error('Error al eliminar el reporte:', error);
             alert('Error al eliminar el reporte');
         }
-    }, [selectedReporte, fetchReportes, closeReporteDetail]);
-
-    // ── Assignment modal & CRUD ───────────────────────────────────────────
-    const openAssignModal = useCallback((item) => {
-        setAssigningProduct(item);
-        setShowAssignModal(true);
-        // cargar proyectos disponibles al abrir
-        fetchProjects();
-    }, [fetchProjects]);
-
-    const closeAssignModal = useCallback(() => {
-        setShowAssignModal(false);
-        setAssigningProduct(null);
-    }, []);
-
-    const assignToProject = useCallback(async ({ productId, projectId, projectName, cantidad, notas }) => {
-        try {
-            const data = await fetchJson(`/api/inventariokrsft/${productId}/assign`, {
-                method: 'POST',
-                body: JSON.stringify({
-                    project_id: projectId,
-                    project_name: projectName,
-                    cantidad,
-                    asignado_por: currentUserName,
-                    notas: notas || '',
-                }),
-            });
-            if (data.success) {
-                closeAssignModal();
-                fetchAssignments();
-                fetchProducts();
-                return { success: true };
-            } else {
-                alert(`❌ ${data.message || 'Error al asignar'}`);
-                return { success: false };
-            }
-        } catch (error) {
-            console.error('Error al asignar a proyecto:', error);
-            alert('Error al asignar a proyecto');
-            return { success: false };
-        }
-    }, [currentUserName, closeAssignModal, fetchAssignments, fetchProducts]);
-
-    const removeAssignment = useCallback(async (assignment) => {
-        if (!confirm(`¿Liberar ${assignment.cantidad} unidades de "${assignment.project_name}"?`)) return;
-        try {
-            const data = await fetchJson(`/api/inventariokrsft/assignments/${assignment.id}`, { method: 'DELETE' });
-            if (data.success) {
-                fetchAssignments();
-                fetchProducts();
-            } else {
-                alert(`❌ ${data.message || 'Error al liberar asignación'}`);
-            }
-        } catch (error) {
-            console.error('Error al liberar asignación:', error);
-            alert('Error al liberar asignación');
-        }
-    }, [fetchAssignments, fetchProducts]);
+    }, [selectedReporte, cancelEliminarReporte, fetchReportes, closeReporteDetail]);
 
     // ========== EFFECTS ==========
     // Fetch data + polling (per rerender-move-effect-to-event — minimal effect)
@@ -527,8 +463,9 @@ export function useInventarioData(auth) {
         // Form helpers
         updateForm, updateLocationForm,
 
-        // Assignments
-        assignments, usage, projects, showAssignModal, assigningProduct,
+        // Delete confirm modal
+        showDeleteModal, pendingDeleteItem, cancelDeleteProduct, confirmDeleteProduct,
+        showDeleteReporteModal, cancelEliminarReporte, confirmEliminarReporte,
 
         // Actions
         goBack, openModal, closeModal, openLocationModal, closeLocationModal,
@@ -536,6 +473,5 @@ export function useInventarioData(auth) {
         verifyProduct, closeVerifyModal, confirmVerify,
         openReportModal, closeReportModal, confirmReport,
         openReporteDetail, closeReporteDetail, cambiarEstadoReporte, eliminarReporte,
-        openAssignModal, closeAssignModal, assignToProject, removeAssignment,
     };
 }

@@ -10,7 +10,6 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Modulos_ERP\InventarioKrsft\Models\Producto;
 use Modulos_ERP\InventarioKrsft\Models\Reporte;
-use Modulos_ERP\InventarioKrsft\Models\Asignacion;
 
 class InventarioController extends Controller
 {
@@ -31,19 +30,92 @@ class InventarioController extends Controller
     {
         try {
             $products = Producto::query()
+                ->leftJoin('projects', 'inventario_productos.project_id', '=', 'projects.id')
+                ->leftJoin('cecos', 'projects.ceco_id', '=', 'cecos.id')
+                ->select(
+                    'inventario_productos.*',
+                    DB::raw("CASE WHEN cecos.codigo IS NOT NULL THEN CONCAT(COALESCE(projects.abbreviation, cecos.nombre, inventario_productos.nombre_proyecto), ' - ', cecos.codigo) ELSE inventario_productos.nombre_proyecto END as nombre_proyecto_con_ceco")
+                )
                 ->where(function ($q) {
-                    $q->where('apartado', false)
-                        ->orWhereNull('apartado');
+                    $q->where('inventario_productos.apartado', false)
+                        ->orWhereNull('inventario_productos.apartado');
                 })
-                ->orderBy('created_at', 'desc')
+                ->orderBy('inventario_productos.created_at', 'desc')
                 ->get()
                 ->map(function ($p) {
+                    // Reemplazar el nombre_proyecto normal por el que tiene CECO si existe
+                    if ($p->nombre_proyecto_con_ceco) {
+                        $p->nombre_proyecto = $p->nombre_proyecto_con_ceco;
+                    }
+                    
                     // Calcular precio unitario si no está definido
                     if (!$p->precio_unitario && $p->cantidad > 0 && $p->precio > 0) {
                         $p->precio_unitario = round($p->precio / $p->cantidad, 2);
                     }
+
+                    // Obtener uso por proyecto desde purchase_orders (solo proyectos activos)
+                    $usage = DB::table('purchase_orders')
+                        ->where('purchase_orders.inventory_item_id', $p->id)
+                        ->where('purchase_orders.status', 'approved')
+                        ->join('projects', 'purchase_orders.project_id', '=', 'projects.id')
+                        ->whereNotIn('projects.status', ['completed', 'cancelled'])
+                        ->leftJoin('cecos', 'projects.ceco_id', '=', 'cecos.id')
+                        ->select(
+                            'projects.name as proyecto',
+                            'projects.id as project_id',
+                            DB::raw("CASE WHEN cecos.codigo IS NOT NULL THEN CONCAT(COALESCE(projects.abbreviation, cecos.nombre), ' - ', cecos.codigo) ELSE projects.name END as proyecto_display"),
+                            DB::raw('SUM(
+                                CASE 
+                                    WHEN purchase_orders.materials IS NOT NULL THEN
+                                        (SELECT COALESCE(SUM(CAST(JSON_UNQUOTE(JSON_EXTRACT(value, "$.qty")) AS DECIMAL(10,2))), 0)
+                                         FROM JSON_TABLE(purchase_orders.materials, "$[*]" COLUMNS(value JSON PATH "$")) AS jt)
+                                    ELSE 0
+                                END
+                            ) as cantidad_usada')
+                        )
+                        ->groupBy('projects.id', 'projects.name', 'projects.abbreviation', 'cecos.codigo', 'cecos.nombre')
+                        ->get()
+                        ->map(function($u) {
+                            return [
+                                'proyecto' => $u->proyecto_display ?: $u->proyecto,
+                                'project_id' => $u->project_id,
+                                'cantidad' => round(floatval($u->cantidad_usada), 2)
+                            ];
+                        })
+                        ->toArray();
+
+                    $p->usage = $usage;
                     return $p;
                 });
+
+            // Enriquecimiento por lote: mapeo posicional entre inventario_productos y purchase_orders
+            // dentro de cada batch_id (evita el problema de ->first() que asigna el mismo material_type a todos)
+            $needEnrich = $products->filter(fn($p) => empty($p->material_type) && !empty($p->batch_id));
+            if ($needEnrich->isNotEmpty()) {
+                $batchIds = $needEnrich->pluck('batch_id')->unique()->values()->toArray();
+                $poRows   = DB::table('purchase_orders')
+                    ->whereIn('batch_id', $batchIds)
+                    ->orderBy('id')
+                    ->get(['id', 'batch_id', 'material_type', 'description'])
+                    ->groupBy('batch_id');
+                $invByBatch = $needEnrich->sortBy('id')->groupBy('batch_id');
+                foreach ($invByBatch as $batchId => $invItems) {
+                    $pos = ($poRows[$batchId] ?? collect())->values();
+                    foreach ($invItems->values() as $idx => $invItem) {
+                        $po = $pos[$idx] ?? null;
+                        if (!$po) continue;
+                        if (!empty($po->material_type)) {
+                            $invItem->material_type = $po->material_type;
+                            if (empty($invItem->nombre) || $invItem->nombre === 'Material sin tipo') {
+                                $invItem->nombre = $po->material_type;
+                            }
+                        }
+                        if (empty($invItem->descripcion) && !empty($po->description)) {
+                            $invItem->descripcion = $po->description;
+                        }
+                    }
+                }
+            }
 
             return response()->json([
                 'success' => true,
@@ -115,16 +187,17 @@ class InventarioController extends Controller
     {
         try {
             $validated = $request->validate([
-                'nombre'    => 'required|string|max:255',
-                'sku'       => 'required|string|max:100|unique:inventario_productos,sku',
-                'cantidad'  => 'required|integer|min:0',
-                'categoria' => 'nullable|string|max:100',
-                'unidad'    => 'nullable|string|max:50',
-                'precio'    => 'nullable|numeric|min:0',
-                'moneda'    => 'nullable|string|in:PEN,USD',
-                'estado'    => 'nullable|string|in:activo,inactivo',
-                'ubicacion' => 'nullable|string|max:20',
-                'descripcion' => 'nullable|string',
+                'nombre'        => 'nullable|string|max:255',
+                'material_type' => 'nullable|string|max:255',
+                'sku'           => 'required|string|max:100|unique:inventario_productos,sku',
+                'cantidad'      => 'required|integer|min:0',
+                'categoria'     => 'nullable|string|max:100',
+                'unidad'        => 'nullable|string|max:50',
+                'precio'        => 'nullable|numeric|min:0',
+                'moneda'        => 'nullable|string|in:PEN,USD',
+                'estado'        => 'nullable|string|in:activo,inactivo',
+                'ubicacion'     => 'nullable|string|max:20',
+                'descripcion'   => 'nullable|string',
             ]);
 
             $precio = $validated['precio'] ?? 0;
@@ -135,8 +208,9 @@ class InventarioController extends Controller
             }
 
             $product = Producto::create([
-                'nombre'          => $validated['nombre'],
-                'descripcion'     => $request->input('descripcion'),
+                'nombre'          => $validated['nombre'] ?? '',
+                'material_type'   => $validated['material_type'] ?? $validated['nombre'] ?? null,
+                'descripcion'     => $validated['descripcion'] ?? null,
                 'sku'             => $validated['sku'],
                 'cantidad'        => $cantidad,
                 'precio'          => $precio,
@@ -176,16 +250,17 @@ class InventarioController extends Controller
 
         try {
             $validated = $request->validate([
-                'nombre'      => 'sometimes|string|max:255',
-                'descripcion' => 'sometimes|nullable|string',
-                'sku'         => ['sometimes', 'string', 'max:100', Rule::unique('inventario_productos', 'sku')->ignore($id)],
-                'cantidad'    => 'sometimes|integer|min:0',
-                'precio'      => 'sometimes|numeric|min:0',
-                'categoria'   => 'sometimes|nullable|string|max:100',
-                'unidad'      => 'sometimes|nullable|string|max:50',
-                'moneda'      => 'sometimes|string|in:PEN,USD',
-                'estado'      => 'sometimes|string|in:activo,inactivo',
-                'ubicacion'   => 'sometimes|nullable|string|max:20',
+                'nombre'        => 'sometimes|string|max:255',
+                'material_type' => 'sometimes|nullable|string|max:255',
+                'descripcion'   => 'sometimes|nullable|string',
+                'sku'           => ['sometimes', 'string', 'max:100', Rule::unique('inventario_productos', 'sku')->ignore($id)],
+                'cantidad'      => 'sometimes|integer|min:0',
+                'precio'        => 'sometimes|numeric|min:0',
+                'categoria'     => 'sometimes|nullable|string|max:100',
+                'unidad'        => 'sometimes|nullable|string|max:50',
+                'moneda'        => 'sometimes|string|in:PEN,USD',
+                'estado'        => 'sometimes|string|in:activo,inactivo',
+                'ubicacion'     => 'sometimes|nullable|string|max:20',
             ]);
 
             $product->update($validated);
@@ -277,7 +352,7 @@ class InventarioController extends Controller
                 }
 
                 $product = Producto::create([
-                    'nombre'          => $item['description'] ?? 'Material sin descripción',
+                    'nombre'          => $item['material_type'] ?? 'Material sin tipo',
                     'sku'             => $sku,
                     'descripcion'     => $item['description'] ?? '',
                     'cantidad'        => $item['qty'] ?? 1,
@@ -332,9 +407,51 @@ class InventarioController extends Controller
     public function getReservedItems(Request $request)
     {
         try {
-            $items = Producto::where('apartado', true)
-                ->orderBy('created_at', 'desc')
-                ->get();
+            $items = Producto::query()
+                ->leftJoin('projects', 'inventario_productos.project_id', '=', 'projects.id')
+                ->leftJoin('cecos', 'projects.ceco_id', '=', 'cecos.id')
+                ->select(
+                    'inventario_productos.*',
+                    DB::raw("CASE WHEN cecos.codigo IS NOT NULL THEN CONCAT(COALESCE(projects.abbreviation, cecos.nombre, inventario_productos.nombre_proyecto), ' - ', cecos.codigo) ELSE inventario_productos.nombre_proyecto END as nombre_proyecto_con_ceco")
+                )
+                ->where('inventario_productos.apartado', true)
+                ->orderBy('inventario_productos.created_at', 'desc')
+                ->get()
+                ->map(function ($p) {
+                    if ($p->nombre_proyecto_con_ceco) {
+                        $p->nombre_proyecto = $p->nombre_proyecto_con_ceco;
+                    }
+
+                    return $p;
+                });
+
+            // Enriquecimiento posicional por lote
+            $needEnrich = $items->filter(fn($p) => empty($p->material_type) && !empty($p->batch_id));
+            if ($needEnrich->isNotEmpty()) {
+                $batchIds = $needEnrich->pluck('batch_id')->unique()->values()->toArray();
+                $poRows   = DB::table('purchase_orders')
+                    ->whereIn('batch_id', $batchIds)
+                    ->orderBy('id')
+                    ->get(['id', 'batch_id', 'material_type', 'description'])
+                    ->groupBy('batch_id');
+                $invByBatch = $needEnrich->sortBy('id')->groupBy('batch_id');
+                foreach ($invByBatch as $batchId => $invItems) {
+                    $pos = ($poRows[$batchId] ?? collect())->values();
+                    foreach ($invItems->values() as $idx => $invItem) {
+                        $po = $pos[$idx] ?? null;
+                        if (!$po) continue;
+                        if (!empty($po->material_type)) {
+                            $invItem->material_type = $po->material_type;
+                            if (empty($invItem->nombre) || $invItem->nombre === 'Material sin tipo') {
+                                $invItem->nombre = $po->material_type;
+                            }
+                        }
+                        if (empty($invItem->descripcion) && !empty($po->description)) {
+                            $invItem->descripcion = $po->description;
+                        }
+                    }
+                }
+            }
 
             return response()->json([
                 'success'        => true,
@@ -599,258 +716,4 @@ class InventarioController extends Controller
         }
     }
 
-    // ══════════════════════════════════════════════════════════════════════
-    //  ASIGNACIONES DE MATERIALES A PROYECTOS
-    // ══════════════════════════════════════════════════════════════════════
-
-    /**
-     * Obtener asignaciones de un producto.
-     * GET /api/inventariokrsft/{id}/assignments
-     */
-    public function getAssignments($id)
-    {
-        try {
-            $product = Producto::find($id);
-            if (!$product) {
-                return response()->json(['success' => false, 'message' => 'Producto no encontrado'], 404);
-            }
-
-            $assignments = Asignacion::where('producto_id', $id)
-                ->orderBy('created_at', 'desc')
-                ->get();
-
-            $totalAsignado = $assignments->sum('cantidad');
-            $disponible = max(0, $product->cantidad - $totalAsignado);
-
-            return response()->json([
-                'success'     => true,
-                'assignments' => $assignments,
-                'summary'     => [
-                    'total'     => $product->cantidad,
-                    'asignado'  => $totalAsignado,
-                    'disponible' => $disponible,
-                ],
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Error en getAssignments', ['error' => $e->getMessage()]);
-            return response()->json(['success' => false, 'message' => 'Error interno'], 500);
-        }
-    }
-
-    /**
-     * Obtener TODAS las asignaciones agrupadas por producto.
-     * GET /api/inventariokrsft/assignments/all
-     *
-     * Incluye también el uso cruzado: órdenes de compra de OTROS proyectos
-     * que tomaron material de cada producto de inventario (source_type='inventory').
-     */
-    public function getAllAssignments()
-    {
-        try {
-            $assignments = Asignacion::orderBy('created_at', 'desc')->get();
-
-            // Agrupar por producto_id
-            $grouped = [];
-            foreach ($assignments as $a) {
-                $pid = $a->producto_id;
-                if (!isset($grouped[$pid])) {
-                    $grouped[$pid] = [];
-                }
-                $grouped[$pid][] = $a;
-            }
-
-            // ── Uso cruzado desde purchase_orders ─────────────────────────
-            // Buscar órdenes de compra que usaron productos de inventario
-            $usageGrouped = [];
-            if (DB::getSchemaBuilder()->hasTable('purchase_orders')) {
-                $usages = DB::table('purchase_orders')
-                    ->leftJoin('projects', 'purchase_orders.project_id', '=', 'projects.id')
-                    ->whereNotNull('purchase_orders.inventory_item_id')
-                    ->where('purchase_orders.source_type', 'inventory')
-                    ->select(
-                        'purchase_orders.inventory_item_id',
-                        'purchase_orders.project_id',
-                        'projects.name as project_name',
-                        'purchase_orders.description',
-                        'purchase_orders.materials',
-                        'purchase_orders.status',
-                        'purchase_orders.approved_at',
-                        'purchase_orders.reference_price',
-                    )
-                    ->orderBy('purchase_orders.approved_at', 'desc')
-                    ->get();
-
-                foreach ($usages as $u) {
-                    $invId = $u->inventory_item_id;
-                    if (!isset($usageGrouped[$invId])) {
-                        $usageGrouped[$invId] = [];
-                    }
-                    // Extraer cantidad del JSON de materials
-                    $materials = $u->materials ? json_decode($u->materials, true) : [];
-                    $qty = 0;
-                    if (is_array($materials)) {
-                        $qty = array_sum(array_map(fn($m) => intval($m['qty'] ?? 1), $materials));
-                    }
-                    $usageGrouped[$invId][] = [
-                        'project_id'   => $u->project_id,
-                        'project_name' => $u->project_name ?? 'Sin proyecto',
-                        'description'  => $u->description,
-                        'qty'          => $qty,
-                        'status'       => $u->status,
-                        'approved_at'  => $u->approved_at,
-                        'reference_price' => $u->reference_price,
-                    ];
-                }
-            }
-
-            return response()->json([
-                'success'     => true,
-                'assignments' => $grouped,
-                'usage'       => $usageGrouped,
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Error en getAllAssignments', ['error' => $e->getMessage()]);
-            return response()->json(['success' => false, 'message' => 'Error interno'], 500);
-        }
-    }
-
-    /**
-     * Asignar cantidad de material a un proyecto.
-     * POST /api/inventariokrsft/{id}/assign
-     */
-    public function assignToProject(Request $request, $id)
-    {
-        try {
-            $product = Producto::find($id);
-            if (!$product) {
-                return response()->json(['success' => false, 'message' => 'Producto no encontrado'], 404);
-            }
-
-            $request->validate([
-                'project_id'   => 'required|integer',
-                'project_name' => 'required|string|max:255',
-                'cantidad'     => 'required|integer|min:1',
-                'asignado_por' => 'nullable|string|max:255',
-                'notas'        => 'nullable|string|max:1000',
-            ]);
-
-            $cantidad = $request->input('cantidad');
-
-            // Calcular disponible
-            $totalAsignado = Asignacion::where('producto_id', $id)->sum('cantidad');
-            $disponible = $product->cantidad - $totalAsignado;
-
-            if ($cantidad > $disponible) {
-                return response()->json([
-                    'success' => false,
-                    'message' => "Solo hay {$disponible} unidades disponibles para asignar",
-                ], 422);
-            }
-
-            DB::beginTransaction();
-
-            $assignment = Asignacion::create([
-                'producto_id'  => $id,
-                'project_id'   => $request->input('project_id'),
-                'project_name' => $request->input('project_name'),
-                'cantidad'     => $cantidad,
-                'asignado_por' => $request->input('asignado_por', auth()->user()->name ?? 'Sistema'),
-                'notas'        => $request->input('notas'),
-            ]);
-
-            // Actualizar campo cantidad_reservada del producto
-            $nuevoTotalAsignado = $totalAsignado + $cantidad;
-            $product->update([
-                'cantidad_reservada' => $nuevoTotalAsignado,
-            ]);
-
-            DB::commit();
-
-            Log::info('Material asignado a proyecto', [
-                'producto_id'  => $id,
-                'project_id'   => $request->input('project_id'),
-                'cantidad'     => $cantidad,
-            ]);
-
-            return response()->json([
-                'success'    => true,
-                'message'    => "Se asignaron {$cantidad} unidades al proyecto",
-                'assignment' => $assignment,
-                'summary'    => [
-                    'total'      => $product->cantidad,
-                    'asignado'   => $nuevoTotalAsignado,
-                    'disponible' => $product->cantidad - $nuevoTotalAsignado,
-                ],
-            ], 201);
-
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json(['success' => false, 'message' => 'Datos inválidos', 'errors' => $e->errors()], 422);
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('Error en assignToProject', ['error' => $e->getMessage()]);
-            return response()->json(['success' => false, 'message' => 'Error interno al asignar material'], 500);
-        }
-    }
-
-    /**
-     * Eliminar una asignación (devolver al stock disponible).
-     * DELETE /api/inventariokrsft/assignments/{id}
-     */
-    public function removeAssignment($id)
-    {
-        try {
-            $assignment = Asignacion::find($id);
-            if (!$assignment) {
-                return response()->json(['success' => false, 'message' => 'Asignación no encontrada'], 404);
-            }
-
-            DB::beginTransaction();
-
-            $product = Producto::find($assignment->producto_id);
-            $cantidad = $assignment->cantidad;
-
-            $assignment->delete();
-
-            // Recalcular cantidad_reservada
-            if ($product) {
-                $nuevoTotal = Asignacion::where('producto_id', $product->id)->sum('cantidad');
-                $product->update(['cantidad_reservada' => $nuevoTotal]);
-            }
-
-            DB::commit();
-
-            return response()->json([
-                'success' => true,
-                'message' => "Se liberaron {$cantidad} unidades al inventario disponible",
-            ]);
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('Error en removeAssignment', ['error' => $e->getMessage()]);
-            return response()->json(['success' => false, 'message' => 'Error interno al eliminar asignación'], 500);
-        }
-    }
-
-    /**
-     * Obtener lista de proyectos activos (para selector en el modal).
-     * GET /api/inventariokrsft/projects
-     */
-    public function getProjects()
-    {
-        try {
-            $projects = DB::table('projects')
-                ->where('status', 'active')
-                ->select('id', 'name', 'status')
-                ->orderBy('name')
-                ->get();
-
-            return response()->json([
-                'success'  => true,
-                'projects' => $projects,
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Error en getProjects', ['error' => $e->getMessage()]);
-            return response()->json(['success' => false, 'message' => 'Error al obtener proyectos', 'projects' => []], 500);
-        }
-    }
 }

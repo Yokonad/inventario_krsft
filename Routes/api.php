@@ -25,13 +25,6 @@ Route::delete('/reportes/{id}', "{$ctrl}@deleteReporte")->where('id', '[0-9]+');
 // Verification — ruta específica antes de /{id}
 Route::post('/verify/{id}', "{$ctrl}@verify")->where('id', '[0-9]+');
 
-// Asignaciones de materiales a proyectos
-Route::get('/assignments/all', "{$ctrl}@getAllAssignments");
-Route::get('/{id}/assignments', "{$ctrl}@getAssignments")->where('id', '[0-9]+');
-Route::post('/{id}/assign', "{$ctrl}@assignToProject")->where('id', '[0-9]+');
-Route::delete('/assignments/{id}', "{$ctrl}@removeAssignment")->where('id', '[0-9]+');
-Route::get('/projects', "{$ctrl}@getProjects");
-
 // ── Rutas con parámetros dinámicos AL FINAL ──
 Route::get('/{id}', "{$ctrl}@show")->where('id', '[0-9]+');
 Route::post('/create', "{$ctrl}@store");

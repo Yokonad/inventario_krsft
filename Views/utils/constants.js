@@ -4,7 +4,7 @@ export const CACHE_PREFIX = 'inventario_cache_';
 
 export const CATEGORIES = [
     'Electrónica', 'Químicos', 'Mobiliario', 'EPP',
-    'Accesorios', 'Herramientas', 'Otros',
+    'Accesorios', 'Herramientas', 'Materiales Comprados', 'Otros',
 ];
 
 export const ZONES = ['A', 'B', 'C', 'D', 'E'];
@@ -17,7 +17,7 @@ export const PROJECT_COLORS = [
 ];
 
 export const INITIAL_FORM = {
-    id: null, nombre: '', categoria: '', unidad: '', cantidad: 1,
+    id: null, nombre: '', descripcion: '', categoria: '', unidad: '', cantidad: 1,
     precio: '',
     zona: 'A', nivel: 1, posicion: 1,
 };

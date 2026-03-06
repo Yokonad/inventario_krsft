@@ -15,9 +15,13 @@ export default function MaterialModal({
             onClose={closeModal}
             title={isEditing ? 'EDITAR MATERIAL' : 'NUEVO MATERIAL'}
             size="lg"
+            hideClose
             footer={
                 <>
-                    <Button variant="secondary" onClick={closeModal}>Cancelar</Button>
+                    <button type="button" onClick={closeModal}
+                        className="rounded-full bg-red-500 px-5 py-2 text-sm font-semibold text-white shadow hover:bg-red-600 transition-colors">
+                        Cancelar
+                    </button>
                     <Button variant="primary" type="submit" form="material-form">Guardar Material</Button>
                 </>
             }
@@ -30,8 +34,13 @@ export default function MaterialModal({
                 </h3>
                 <div className="space-y-4 mb-6">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-0.5">Nombre del Material <span className="text-red-500">*</span></label>
-                        <input value={form.nombre} onChange={(e) => updateForm('nombre', e.target.value)} type="text" required placeholder="Ej: Laptop HP Pavilion"
+                        <label className="block text-sm font-medium text-gray-700 mb-0.5">Tipo de Material</label>
+                        <input value={form.nombre} onChange={(e) => updateForm('nombre', e.target.value)} type="text" placeholder="Ej: bridas s.o., codos sw, válvulas"
+                            className="w-full rounded border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-primary focus:ring-primary" />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-0.5">Especificación Técnica</label>
+                        <input value={form.descripcion} onChange={(e) => updateForm('descripcion', e.target.value)} type="text" placeholder="Ej: bridas s.o. de 2&quot; x 150 lb."
                             className="w-full rounded border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-primary focus:ring-primary" />
                     </div>
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

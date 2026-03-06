@@ -20,7 +20,7 @@ import LocationModal      from './Components/modals/LocationModal';
 import VerifyModal        from './Components/modals/VerifyModal';
 import ReportModal        from './Components/modals/ReportModal';
 import ReporteDetailModal from './Components/modals/ReporteDetailModal';
-import AssignProjectModal from './Components/modals/AssignProjectModal';
+import ConfirmModal       from './Components/modals/ConfirmModal';
 
 export default function InventarioIndex({ auth }) {
     const inv = useInventarioData(auth);
@@ -74,12 +74,8 @@ export default function InventarioIndex({ auth }) {
                         />
                         <InventarioTable
                             filteredItems={inv.filteredItems}
-                            assignments={inv.assignments}
-                            usage={inv.usage}
                             openReportModal={inv.openReportModal}  verifyProduct={inv.verifyProduct}
                             openModal={inv.openModal}  deleteProduct={inv.deleteProduct}
-                            onAssignClick={inv.openAssignModal}
-                            onRemoveAssignment={inv.removeAssignment}
                         />
                     </div>
                 )}
@@ -101,7 +97,25 @@ export default function InventarioIndex({ auth }) {
             {inv.showVerifyModal && <VerifyModal verifyingProduct={inv.verifyingProduct} currentUserName={inv.currentUserName} confirmVerify={inv.confirmVerify} closeVerifyModal={inv.closeVerifyModal} />}
             {inv.showReportModal && <ReportModal reportingProduct={inv.reportingProduct} reportMotivo={inv.reportMotivo} setReportMotivo={inv.setReportMotivo} confirmReport={inv.confirmReport} closeReportModal={inv.closeReportModal} />}
             {inv.showReporteDetailModal && <ReporteDetailModal selectedReporte={inv.selectedReporte} solucionReporte={inv.solucionReporte} setSolucionReporte={inv.setSolucionReporte} cambiarEstadoReporte={inv.cambiarEstadoReporte} eliminarReporte={inv.eliminarReporte} closeReporteDetail={inv.closeReporteDetail} />}
-            {inv.showAssignModal && <AssignProjectModal product={inv.assigningProduct} projects={inv.projects} assignments={inv.assignments} onAssign={inv.assignToProject} onClose={inv.closeAssignModal} />}
+
+            <ConfirmModal
+                open={inv.showDeleteModal}
+                onClose={inv.cancelDeleteProduct}
+                title="Eliminar material"
+                message={`¿Estás seguro de eliminar "${inv.pendingDeleteItem?.material_type || inv.pendingDeleteItem?.nombre || ''}"? Esta acción no se puede deshacer.`}
+                actionLabel="Eliminar"
+                actionVariant="danger"
+                onConfirm={inv.confirmDeleteProduct}
+            />
+            <ConfirmModal
+                open={inv.showDeleteReporteModal}
+                onClose={inv.cancelEliminarReporte}
+                title="Eliminar reporte"
+                message={`¿Está seguro de que desea eliminar el reporte de "${inv.selectedReporte?.producto_nombre || ''}"? Esta acción no se puede deshacer.`}
+                actionLabel="Eliminar"
+                actionVariant="danger"
+                onConfirm={inv.confirmEliminarReporte}
+            />
         </div>
     );
 }

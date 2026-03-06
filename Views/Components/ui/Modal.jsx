@@ -12,6 +12,7 @@ export default function Modal({
     children,
     footer,
     size = 'md',
+    hideClose = false,
 }) {
     if (!open) return null;
 
@@ -37,14 +38,16 @@ export default function Modal({
                             {titleIcon}
                             {title}
                         </h2>
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="rounded p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
-                            aria-label="Cerrar"
-                        >
-                            <XMarkIcon className="size-5" />
-                        </button>
+                        {!hideClose && (
+                            <button
+                                type="button"
+                                onClick={onClose}
+                                className="rounded p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+                                aria-label="Cerrar"
+                            >
+                                <XMarkIcon className="size-5" />
+                            </button>
+                        )}
                     </div>
                 )}
                 <div className="flex-1 overflow-y-auto px-6 py-4">{children}</div>
