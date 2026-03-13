@@ -13,5 +13,13 @@
         "Admin",
         "Supervisor"
     ],
-    "dependencies": []
+    "dependencies": [],
+    "permissions": [
+        { "action": "access", "display_name": "Inventario: Acceder", "description": "Permite ver el módulo de Inventario en el dashboard y acceder a su página principal" },
+        { "action": "create", "display_name": "Inventario: Crear", "description": "Habilita el botón «Nuevo Material» para registrar ítems con tipo, especificación técnica, categoría, cantidad y precio" },
+        { "action": "update", "display_name": "Inventario: Editar", "description": "Habilita la acción «Editar Material» en el menú de cada ítem para modificar sus datos" },
+        { "action": "delete", "display_name": "Inventario: Eliminar", "description": "Muestra el botón de eliminar (papelera) en cada fila para borrar materiales y reportes" },
+        { "action": "verify", "display_name": "Inventario: Verificar", "description": "Habilita la acción «Verificar» en el menú de cada ítem para marcar materiales como revisados físicamente" },
+        { "action": "respond_reports", "display_name": "Inventario: Responder Reportes", "description": "Habilita la pestaña «Reportes», permite ver reportes de materiales faltantes y cambiar su estado (resolver, rechazar)" }
+    ]
 }

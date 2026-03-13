@@ -16,11 +16,10 @@ Route::get('/reserved-items', "{$ctrl}@getReservedItems");
 Route::post('/add-from-purchase', "{$ctrl}@addPurchasedItems");
 Route::post('/assign-location', "{$ctrl}@assignLocation");
 
-// Reportes — rutas específicas antes de /{id}
-Route::get('/reportes', "{$ctrl}@listReportes");
-Route::post('/reportes', "{$ctrl}@createReporte");
-Route::put('/reportes/{id}', "{$ctrl}@updateReporte")->where('id', '[0-9]+');
-Route::delete('/reportes/{id}', "{$ctrl}@deleteReporte")->where('id', '[0-9]+');
+// Reportes de materiales faltantes (desde proyectos)
+Route::get('/arrival-reports', "{$ctrl}@listArrivalReports");
+Route::get('/arrival-reports/{id}', "{$ctrl}@showArrivalReport")->where('id', '[0-9]+');
+Route::put('/arrival-reports/{id}/respond', "{$ctrl}@respondArrivalReport")->where('id', '[0-9]+');
 
 // Verification — ruta específica antes de /{id}
 Route::post('/verify/{id}', "{$ctrl}@verify")->where('id', '[0-9]+');

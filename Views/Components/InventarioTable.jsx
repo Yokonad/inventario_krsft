@@ -1,7 +1,7 @@
 /**
  * InventarioTable – Tabla de inventario con expansión de uso por proyecto.
  */
-import { useState } from 'react';
+import { useState, Fragment } from 'react';
 import { createPortal } from 'react-dom';
 import { formatDate, getProjectPillStyle } from '../utils/helpers';
 import {
@@ -10,7 +10,6 @@ import {
     MapPinIcon,
     Bars3Icon,
     CheckCircleIcon,
-    ExclamationTriangleIcon,
     XMarkIcon,
     ChevronRightIcon,
     ChevronDownIcon,
@@ -20,55 +19,56 @@ import Badge from './ui/Badge';
 const STATUS_VARIANT = { activo: 'emerald', pendiente: 'amber', rechazado: 'red' };
 const STATUS_LABEL = { activo: 'Aprobado', pendiente: 'Sin Aprobar', rechazado: 'Rechazado' };
 
-function ActionDropdown({ item, onEdit, onDelete, onVerify, onReport, isOpen, onToggle, onClose }) {
+function ActionDropdown({ item, onEdit, onDelete, onVerify, isOpen, onToggle, onClose, permissions = {} }) {
     const actions = [
-        {
+        permissions.update ? {
             label: 'Editar Material',
             description: 'Modificar datos del material',
             icon: <PencilSquareIcon className="size-6" />,
             onClick: () => { onEdit(item); onClose(); },
             iconBg: 'bg-blue-100 text-blue-600',
             border: 'border-blue-100 hover:border-blue-300 hover:bg-blue-50/50',
-        },
-        {
+        } : null,
+        permissions.verify ? {
             label: 'Verificar',
             description: 'Marcar como verificado',
             icon: <CheckCircleIcon className="size-6" />,
             onClick: () => { onVerify(item); onClose(); },
             iconBg: 'bg-emerald-100 text-emerald-600',
             border: 'border-emerald-100 hover:border-emerald-300 hover:bg-emerald-50/50',
-        },
-        ...((item.project_id || item.nombre_proyecto || item.apartado)
-            ? [{
-                label: 'Crear Reporte',
-                description: 'Reportar un problema',
-                icon: <ExclamationTriangleIcon className="size-6" />,
-                onClick: () => { onReport(item); onClose(); },
-                iconBg: 'bg-amber-100 text-amber-600',
-                border: 'border-amber-100 hover:border-amber-300 hover:bg-amber-50/50',
-            }]
-            : []),
-    ];
+        } : null,
+    ].filter(Boolean);
+
+    const showHamburger = actions.length > 0;
+    const showTrash = permissions.delete;
+
+    if (!showHamburger && !showTrash) {
+        return <span className="text-sm text-gray-400">—</span>;
+    }
 
     return (
         <div className="flex items-center justify-center gap-1.5">
-            <button
-                onClick={onToggle}
-                className="inline-flex items-center justify-center rounded-md border border-gray-200 bg-white p-2 text-gray-600 shadow-sm hover:bg-gray-50 transition-colors"
-                title="Más opciones"
-            >
-                <Bars3Icon className="size-4" />
-            </button>
+            {showHamburger && (
+                <button
+                    onClick={onToggle}
+                    className="inline-flex items-center justify-center rounded-md border border-gray-200 bg-white p-2 text-gray-600 shadow-sm hover:bg-gray-50 transition-colors"
+                    title="Más opciones"
+                >
+                    <Bars3Icon className="size-4" />
+                </button>
+            )}
 
-            <button
-                onClick={() => onDelete(item)}
-                className="inline-flex items-center justify-center rounded-md border border-red-200 bg-red-50 p-2 text-red-500 shadow-sm hover:bg-red-100 transition-colors"
-                title="Eliminar"
-            >
-                <TrashIcon className="size-4" />
-            </button>
+            {showTrash && (
+                <button
+                    onClick={() => onDelete(item)}
+                    className="inline-flex items-center justify-center rounded-md border border-red-200 bg-red-50 p-2 text-red-500 shadow-sm hover:bg-red-100 transition-colors"
+                    title="Eliminar"
+                >
+                    <TrashIcon className="size-4" />
+                </button>
+            )}
 
-            {isOpen && createPortal(
+            {isOpen && showHamburger && createPortal(
                 <div
                     className="fixed inset-0 z-50 flex items-center justify-center bg-black/25 p-4 backdrop-blur-sm"
                     onClick={onClose}
@@ -118,7 +118,6 @@ function ActionDropdown({ item, onEdit, onDelete, onVerify, onReport, isOpen, on
 /**
  * @param {{
  *   filteredItems: Array,
- *   openReportModal: Function,
  *   verifyProduct: Function,
  *   openModal: Function,
  *   deleteProduct: Function,
@@ -126,10 +125,10 @@ function ActionDropdown({ item, onEdit, onDelete, onVerify, onReport, isOpen, on
  */
 export default function InventarioTable({
     filteredItems,
-    openReportModal,
     verifyProduct,
     openModal,
     deleteProduct,
+    permissions = {},
 }) {
     const [openDropdownId, setOpenDropdownId] = useState(null);
     const [expandedRows, setExpandedRows] = useState(new Set());
@@ -182,8 +181,8 @@ export default function InventarioTable({
                         const hasUsage = item.usage && item.usage.length > 0;
                         
                         return (
-                            <>
-                                <tr key={item.id} className="hover:bg-gray-50 transition-colors">
+                            <Fragment key={item.id}>
+                                <tr className="hover:bg-gray-50 transition-colors">
                                     {/* Tipo de Material */}
                                     <td className="px-4 py-3 max-w-0">
                                         <div className="flex items-center gap-2">
@@ -283,10 +282,10 @@ export default function InventarioTable({
                                     onEdit={openModal}
                                     onDelete={deleteProduct}
                                     onVerify={verifyProduct}
-                                    onReport={openReportModal}
                                     isOpen={openDropdownId === item.id}
                                     onToggle={() => setOpenDropdownId(openDropdownId === item.id ? null : item.id)}
                                     onClose={() => setOpenDropdownId(null)}
+                                    permissions={permissions}
                                 />
                             </td>
                         </tr>
@@ -316,7 +315,7 @@ export default function InventarioTable({
                                 </td>
                             </tr>
                         )}
-                    </>
+                    </Fragment>
                     );
                     })}
                 </tbody>

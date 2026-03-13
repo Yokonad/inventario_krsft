@@ -11,6 +11,7 @@ export default function FilterBar({
     filterCategory, onCategoryChange,
     filterStatus, onStatusChange,
     onAddClick,
+    canCreate,
 }) {
     return (
         <div className="rounded-lg border-2 border-gray-200 bg-white p-6 shadow-sm">
@@ -45,9 +46,11 @@ export default function FilterBar({
                         <option value="rechazado">Rechazado</option>
                     </select>
                 </div>
-                <Button variant="primary" onClick={() => onAddClick()} className="gap-2 whitespace-nowrap">
-                    <PlusIcon className="size-4" /> Nuevo Material
-                </Button>
+                {canCreate && (
+                    <Button variant="primary" onClick={() => onAddClick()} className="gap-2 whitespace-nowrap">
+                        <PlusIcon className="size-4" /> Nuevo Material
+                    </Button>
+                )}
             </div>
         </div>
     );

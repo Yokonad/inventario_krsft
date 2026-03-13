@@ -9,18 +9,13 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Modulos_ERP\InventarioKrsft\Models\Producto;
-use Modulos_ERP\InventarioKrsft\Models\Reporte;
 
 class InventarioController extends Controller
 {
     public function index()
     {
         $moduleName = basename(dirname(__DIR__));
-        return Inertia::render("{$moduleName}/Index", [
-            'auth' => [
-                'user' => auth()->user()
-            ]
-        ]);
+        return Inertia::render("{$moduleName}/Index");
     }
 
     /**
@@ -53,10 +48,14 @@ class InventarioController extends Controller
                         $p->precio_unitario = round($p->precio / $p->cantidad, 2);
                     }
 
-                    // Obtener uso por proyecto desde purchase_orders (solo proyectos activos)
+                    // Obtener uso por proyecto desde purchase_orders (solo proyectos activos, excluir anuladas)
                     $usage = DB::table('purchase_orders')
                         ->where('purchase_orders.inventory_item_id', $p->id)
                         ->where('purchase_orders.status', 'approved')
+                        ->where(function ($q) {
+                            $q->whereNull('purchase_orders.cancellation_status')
+                              ->orWhere('purchase_orders.cancellation_status', '!=', 'anulada');
+                        })
                         ->join('projects', 'purchase_orders.project_id', '=', 'projects.id')
                         ->whereNotIn('projects.status', ['completed', 'cancelled'])
                         ->leftJoin('cecos', 'projects.ceco_id', '=', 'cecos.id')
@@ -569,151 +568,114 @@ class InventarioController extends Controller
         }
     }
 
+    // ── Reportes de materiales faltantes (desde proyectos) ──────────────
+
     /**
-     * Crear reporte de material no recibido en obra
-     * POST /api/inventariokrsft/reportes
+     * Listar reportes de materiales faltantes enviados desde proyectos.
+     * GET /api/inventariokrsft/arrival-reports
      */
-    public function createReporte(Request $request)
+    public function listArrivalReports(Request $request)
     {
         try {
-            $request->validate([
-                'producto_id'  => 'required|integer|exists:inventario_productos,id',
-                'motivo'       => 'required|string|min:10|max:1000',
-                'reportado_por' => 'required|string|max:255',
-            ]);
+            $status = $request->query('status');
 
-            $product = Producto::find($request->input('producto_id'));
+            $query = DB::table('material_arrival_reports')
+                ->join('projects', 'material_arrival_reports.project_id', '=', 'projects.id')
+                ->select([
+                    'material_arrival_reports.*',
+                    'projects.name as project_name',
+                    'projects.abbreviation as project_abbreviation',
+                ]);
 
-            $reporte = Reporte::create([
-                'producto_id'     => $product->id,
-                'producto_nombre' => $product->nombre,
-                'producto_sku'    => $product->sku,
-                'proyecto_nombre' => $product->nombre_proyecto ?? 'Sin proyecto',
-                'motivo'          => $request->input('motivo'),
-                'reportado_por'   => $request->input('reportado_por'),
-                'estado'          => 'pendiente',
-            ]);
+            if ($status && in_array($status, ['pendiente', 'respondido'])) {
+                $query->where('material_arrival_reports.status', $status);
+            } else {
+                $query->whereIn('material_arrival_reports.status', ['pendiente', 'respondido']);
+            }
+
+            $reports = $query->orderByDesc('material_arrival_reports.created_at')->get();
+
+            foreach ($reports as $report) {
+                $report->items = DB::table('material_arrival_report_items')
+                    ->where('report_id', $report->id)
+                    ->get();
+            }
 
             return response()->json([
                 'success' => true,
-                'message' => 'Reporte creado correctamente',
-                'data'    => $reporte,
-            ], 201);
-
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json(['success' => false, 'message' => 'Datos inválidos', 'errors' => $e->errors()], 422);
+                'reports' => $reports,
+                'total'   => $reports->count(),
+            ]);
         } catch (\Exception $e) {
-            Log::error('Error en createReporte', ['error' => $e->getMessage()]);
-            return response()->json(['success' => false, 'message' => 'Error interno al crear reporte'], 500);
+            Log::error('Error en listArrivalReports', ['error' => $e->getMessage()]);
+            return response()->json(['success' => false, 'message' => 'Error interno'], 500);
         }
     }
 
     /**
-     * Listar todos los reportes
-     * GET /api/inventariokrsft/reportes
+     * Detalle de un reporte.
+     * GET /api/inventariokrsft/arrival-reports/{id}
      */
-    public function listReportes(Request $request)
+    public function showArrivalReport(Request $request, $id)
     {
-        try {
-            $reportes = Reporte::orderBy('created_at', 'desc')->get();
+        $report = DB::table('material_arrival_reports')
+            ->join('projects', 'material_arrival_reports.project_id', '=', 'projects.id')
+            ->where('material_arrival_reports.id', $id)
+            ->select([
+                'material_arrival_reports.*',
+                'projects.name as project_name',
+                'projects.abbreviation as project_abbreviation',
+            ])
+            ->first();
 
-            return response()->json([
-                'success'  => true,
-                'reportes' => $reportes,
-                'total'    => $reportes->count(),
-            ]);
-
-        } catch (\Exception $e) {
-            Log::error('Error en listReportes', ['error' => $e->getMessage()]);
-            return response()->json(['success' => false, 'message' => 'Error interno al listar reportes'], 500);
+        if (!$report) {
+            return response()->json(['success' => false, 'message' => 'Reporte no encontrado'], 404);
         }
+
+        $report->items = DB::table('material_arrival_report_items')
+            ->where('report_id', $report->id)
+            ->get();
+
+        return response()->json(['success' => true, 'report' => $report]);
     }
 
     /**
-     * Actualizar estado de reporte
-     * PUT /api/inventariokrsft/reportes/{id}
-     * Fix: validación del campo estado contra valores del enum de la migración.
+     * Responder un reporte de materiales faltantes.
+     * PUT /api/inventariokrsft/arrival-reports/{id}/respond
      */
-    public function updateReporte(Request $request, $id)
+    public function respondArrivalReport(Request $request, $id)
     {
-        try {
-            $reporte = Reporte::find($id);
-            if (!$reporte) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Reporte no encontrado',
-                ], 404);
-            }
+        $request->validate([
+            'respuesta' => 'required|string|min:5|max:2000',
+        ]);
 
-            $request->validate([
-                'estado'       => ['sometimes', Rule::in(['pendiente', 'revisado', 'resuelto'])],
-                'notas'        => 'sometimes|nullable|string|max:2000',
-                'solucion'     => 'sometimes|nullable|string|max:2000',
-                'revisado_por' => 'sometimes|nullable|string|max:255',
-                'resuelto_por' => 'sometimes|nullable|string|max:255',
-            ]);
-
-            $data = $request->only(['estado', 'notas', 'solucion', 'resuelto_por']);
-
-            if ($request->has('estado') && $request->input('estado') === 'revisado') {
-                $data['revisado_at']  = now();
-                $data['revisado_por'] = $request->input('revisado_por', auth()->user()->name ?? 'Sistema');
-            }
-
-            if ($request->has('estado') && $request->input('estado') === 'resuelto') {
-                // Fix: requerir solución al marcar como resuelto
-                if (empty($data['solucion']) && empty($reporte->solucion)) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Se requiere una descripción de la solución para marcar como resuelto',
-                    ], 422);
-                }
-                $data['resuelto_at']  = now();
-                $data['resuelto_por'] = $request->input('resuelto_por', auth()->user()->name ?? 'Sistema');
-            }
-
-            $reporte->update($data);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Reporte actualizado correctamente',
-                'data'    => $reporte->fresh(),
-            ]);
-
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json(['success' => false, 'message' => 'Datos inválidos', 'errors' => $e->errors()], 422);
-        } catch (\Exception $e) {
-            Log::error('Error en updateReporte', ['error' => $e->getMessage()]);
-            return response()->json(['success' => false, 'message' => 'Error interno al actualizar reporte'], 500);
+        $report = DB::table('material_arrival_reports')->where('id', $id)->first();
+        if (!$report) {
+            return response()->json(['success' => false, 'message' => 'Reporte no encontrado'], 404);
         }
-    }
 
-    /**
-     * Eliminar reporte
-     * DELETE /api/inventariokrsft/reportes/{id}
-     */
-    public function deleteReporte($id)
-    {
-        try {
-            $reporte = Reporte::find($id);
-            if (!$reporte) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Reporte no encontrado',
-                ], 404);
-            }
-
-            $reporte->delete();
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Reporte eliminado correctamente',
-            ]);
-
-        } catch (\Exception $e) {
-            Log::error('Error en deleteReporte', ['error' => $e->getMessage()]);
-            return response()->json(['success' => false, 'message' => 'Error interno al eliminar reporte'], 500);
+        if ($report->status === 'resuelto') {
+            return response()->json(['success' => false, 'message' => 'Este reporte ya fue resuelto.'], 422);
         }
-    }
 
+        $user = $request->user();
+        $userName = $user->name;
+        if ($user->trabajador_id && DB::getSchemaBuilder()->hasTable('trabajadores')) {
+            $trabajador = DB::table('trabajadores')->find($user->trabajador_id);
+            if ($trabajador) {
+                $userName = $trabajador->nombre_completo ?: trim($trabajador->nombres . ' ' . $trabajador->apellido_paterno);
+            }
+        }
+
+        DB::table('material_arrival_reports')->where('id', $id)->update([
+            'status'             => 'respondido',
+            'respuesta'          => $request->input('respuesta'),
+            'respondido_por'     => $user->id,
+            'respondido_por_name' => $userName,
+            'respondido_at'      => now(),
+            'updated_at'         => now(),
+        ]);
+
+        return response()->json(['success' => true, 'message' => 'Reporte respondido correctamente.']);
+    }
 }

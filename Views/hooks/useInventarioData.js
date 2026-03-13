@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { hasPermission } from '@/utils/permissions';
 import { POLLING_INTERVAL_MS, INITIAL_FORM, INITIAL_LOCATION_FORM } from '../utils/constants';
 import { fetchJson, loadFromCache, saveToCache, arraysEqual, formatDate } from '../utils/helpers';
 
@@ -11,28 +12,23 @@ export function useInventarioData(auth) {
     // ========== STATE ==========
     const [products, setProducts] = useState(() => loadFromCache('products') || []);
     const [reservedItems, setReservedItems] = useState(() => loadFromCache('reservedItems') || []);
-    const [reportes, setReportes] = useState([]);
+    const [arrivalReports, setArrivalReports] = useState([]);
+    const [filterArrivalStatus, setFilterArrivalStatus] = useState('');
+    const [showRespondModal, setShowRespondModal] = useState(false);
+    const [selectedArrivalReport, setSelectedArrivalReport] = useState(null);
     const [currentTab, setCurrentTab] = useState('inventario');
     const [searchQuery, setSearchQuery] = useState('');
     const [filterCategory, setFilterCategory] = useState('');
     const [filterStatus, setFilterStatus] = useState('');
-    const [filterReporteEstado, setFilterReporteEstado] = useState('');
     const [openMenuId, setOpenMenuId] = useState(null);
     const [showModal, setShowModal] = useState(false);
     const [showLocationModal, setShowLocationModal] = useState(false);
     const [showVerifyModal, setShowVerifyModal] = useState(false);
-    const [showReportModal, setShowReportModal] = useState(false);
-    const [showReporteDetailModal, setShowReporteDetailModal] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [pendingDeleteItem, setPendingDeleteItem] = useState(null);
-    const [showDeleteReporteModal, setShowDeleteReporteModal] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [selectedReservedItem, setSelectedReservedItem] = useState(null);
     const [verifyingProduct, setVerifyingProduct] = useState(null);
-    const [reportingProduct, setReportingProduct] = useState(null);
-    const [reportMotivo, setReportMotivo] = useState('');
-    const [selectedReporte, setSelectedReporte] = useState(null);
-    const [solucionReporte, setSolucionReporte] = useState('');
     const [form, setForm] = useState(INITIAL_FORM);
     const [locationForm, setLocationForm] = useState(INITIAL_LOCATION_FORM);
 
@@ -76,14 +72,14 @@ export function useInventarioData(auth) {
         [locationForm.zona, locationForm.nivel, locationForm.posicion],
     );
 
-    const filteredReportes = useMemo(() => {
-        if (!filterReporteEstado) return reportes;
-        return reportes.filter((r) => r.estado === filterReporteEstado);
-    }, [reportes, filterReporteEstado]);
+    const filteredArrivalReports = useMemo(() => {
+        if (!filterArrivalStatus) return arrivalReports;
+        return arrivalReports.filter((r) => r.status === filterArrivalStatus);
+    }, [arrivalReports, filterArrivalStatus]);
 
-    const pendingReportesCount = useMemo(
-        () => reportes.filter((r) => r.estado === 'pendiente').length,
-        [reportes],
+    const pendingArrivalCount = useMemo(
+        () => arrivalReports.filter((r) => r.status === 'pendiente').length,
+        [arrivalReports],
     );
 
     // ========== DATA FETCHING (per async-parallel) ==========
@@ -117,14 +113,14 @@ export function useInventarioData(auth) {
         }
     }, []);
 
-    const fetchReportes = useCallback(async () => {
+    const fetchArrivalReports = useCallback(async () => {
         try {
-            const data = await fetchJson('/api/inventariokrsft/reportes');
+            const data = await fetchJson('/api/inventariokrsft/arrival-reports');
             if (data.success) {
-                setReportes(data.reportes || []);
+                setArrivalReports(data.reports || []);
             }
         } catch (error) {
-            console.error('Error fetching reportes:', error);
+            console.error('Error fetching arrival reports:', error);
         }
     }, []);
 
@@ -132,9 +128,9 @@ export function useInventarioData(auth) {
         Promise.all([
             fetchProducts(),
             fetchReservedItems(),
-            fetchReportes(),
+            fetchArrivalReports(),
         ]);
-    }, [fetchProducts, fetchReservedItems, fetchReportes]);
+    }, [fetchProducts, fetchReservedItems, fetchArrivalReports]);
 
     // ========== NAVIGATION ==========
     const goBack = useCallback(() => {
@@ -309,115 +305,47 @@ export function useInventarioData(auth) {
         }
     }, [verifyingProduct, currentUserName, closeVerifyModal, fetchProducts, fetchReservedItems]);
 
-    // ========== REPORTS ==========
-    const openReportModal = useCallback((item) => {
-        setReportingProduct(item);
-        setReportMotivo('');
-        setShowReportModal(true);
-    }, []);
-
-    const closeReportModal = useCallback(() => {
-        setShowReportModal(false);
-        setReportingProduct(null);
-        setReportMotivo('');
-    }, []);
-
-    const confirmReport = useCallback(async (e) => {
-        e.preventDefault();
-        if (!reportingProduct || !reportMotivo.trim()) {
-            alert('Por favor describe el motivo del reporte');
-            return;
-        }
+    // ========== ARRIVAL REPORTS ==========
+    const openRespondModal = useCallback(async (report) => {
         try {
-            const data = await fetchJson('/api/inventariokrsft/reportes', {
-                method: 'POST',
-                body: JSON.stringify({
-                    producto_id: reportingProduct.id,
-                    motivo: reportMotivo,
-                    reportado_por: currentUserName,
-                }),
-            });
+            const data = await fetchJson(`/api/inventariokrsft/arrival-reports/${report.id}`);
             if (data.success) {
-                closeReportModal();
-                fetchReportes();
-                setCurrentTab('reportes');
+                setSelectedArrivalReport(data.report);
             } else {
-                alert(`❌ Error: ${data.message || 'No se pudo crear el reporte'}`);
+                setSelectedArrivalReport(report);
             }
-        } catch (error) {
-            console.error('Error al crear reporte:', error);
-            alert('Error al crear el reporte');
+        } catch {
+            setSelectedArrivalReport(report);
         }
-    }, [reportingProduct, reportMotivo, currentUserName, closeReportModal, fetchReportes]);
-
-    // ========== REPORT DETAIL ==========
-    const openReporteDetail = useCallback((reporte) => {
-        setSelectedReporte(reporte);
-        setSolucionReporte(reporte.solucion || '');
-        setShowReporteDetailModal(true);
+        setShowRespondModal(true);
     }, []);
 
-    const closeReporteDetail = useCallback(() => {
-        setShowReporteDetailModal(false);
-        setSelectedReporte(null);
-        setSolucionReporte('');
+    const closeRespondModal = useCallback(() => {
+        setShowRespondModal(false);
+        setSelectedArrivalReport(null);
     }, []);
 
-    const cambiarEstadoReporte = useCallback(async (nuevoEstado) => {
-        if (!selectedReporte) return;
-        if (nuevoEstado === 'resuelto' && !solucionReporte.trim() && !selectedReporte.solucion) {
-            alert('⚠️ Por favor, describe la solución antes de marcar como resuelto');
+    const respondArrivalReport = useCallback(async (reportId, respuesta) => {
+        if (!respuesta.trim()) {
+            alert('Por favor escribe una respuesta');
             return;
         }
         try {
-            const body = { estado: nuevoEstado };
-            if (nuevoEstado === 'revisado') body.revisado_por = currentUserName;
-            else if (nuevoEstado === 'resuelto') {
-                body.solucion = solucionReporte.trim() || selectedReporte.solucion;
-                body.resuelto_por = currentUserName;
-            }
-
-            const data = await fetchJson(`/api/inventariokrsft/reportes/${selectedReporte.id}`, {
+            const data = await fetchJson(`/api/inventariokrsft/arrival-reports/${reportId}/respond`, {
                 method: 'PUT',
-                body: JSON.stringify(body),
+                body: JSON.stringify({ respuesta }),
             });
             if (data.success) {
-                fetchReportes();
-                closeReporteDetail();
+                closeRespondModal();
+                fetchArrivalReports();
             } else {
-                alert(`❌ Error: ${data.message || 'No se pudo actualizar'}`);
+                alert(`❌ Error: ${data.message || 'No se pudo responder'}`);
             }
         } catch (error) {
-            console.error('Error al cambiar estado del reporte:', error);
-            alert('Error al actualizar el reporte');
+            console.error('Error al responder reporte:', error);
+            alert('Error al responder el reporte');
         }
-    }, [selectedReporte, solucionReporte, currentUserName, fetchReportes, closeReporteDetail]);
-
-    const eliminarReporte = useCallback(() => {
-        if (!selectedReporte) return;
-        setShowDeleteReporteModal(true);
-    }, [selectedReporte]);
-
-    const cancelEliminarReporte = useCallback(() => {
-        setShowDeleteReporteModal(false);
-    }, []);
-
-    const confirmEliminarReporte = useCallback(async () => {
-        if (!selectedReporte) return;
-        try {
-            const data = await fetchJson(`/api/inventariokrsft/reportes/${selectedReporte.id}`, { method: 'DELETE' });
-            if (data.success) {
-                cancelEliminarReporte();
-                fetchReportes();
-                closeReporteDetail();
-            } else {
-                alert(`❌ Error: ${data.message || 'No se pudo eliminar'}`);
-            }
-        } catch (error) {
-            console.error('Error al eliminar el reporte:', error);
-            alert('Error al eliminar el reporte');
-        }
-    }, [selectedReporte, cancelEliminarReporte, fetchReportes, closeReporteDetail]);
+    }, [closeRespondModal, fetchArrivalReports]);
 
     // ========== EFFECTS ==========
     // Fetch data + polling (per rerender-move-effect-to-event — minimal effect)
@@ -440,38 +368,49 @@ export function useInventarioData(auth) {
         return () => document.removeEventListener('click', handleClick);
     }, []);
 
+    // ========== PERMISSIONS ==========
+    const permissions = useMemo(() => ({
+        create:          hasPermission(auth, 'module.inventariokrsft.create'),
+        update:          hasPermission(auth, 'module.inventariokrsft.update'),
+        delete:          hasPermission(auth, 'module.inventariokrsft.delete'),
+        verify:          hasPermission(auth, 'module.inventariokrsft.verify'),
+        respond_reports: hasPermission(auth, 'module.inventariokrsft.view'),
+    }), [auth]);
+
     // ========== RETURN ==========
     return {
         // State
-        products, reservedItems, reportes,
+        products, reservedItems,
         currentTab, setCurrentTab,
         searchQuery, setSearchQuery,
         filterCategory, setFilterCategory,
         filterStatus, setFilterStatus,
-        filterReporteEstado, setFilterReporteEstado,
         openMenuId, setOpenMenuId,
-        showModal, showLocationModal, showVerifyModal, showReportModal, showReporteDetailModal,
-        isEditing, selectedReservedItem, verifyingProduct, reportingProduct,
-        reportMotivo, setReportMotivo,
-        selectedReporte, solucionReporte, setSolucionReporte,
+        showModal, showLocationModal, showVerifyModal,
+        isEditing, selectedReservedItem, verifyingProduct,
         form, locationForm, currentUserName,
+
+        // Arrival reports
+        arrivalReports, filteredArrivalReports, pendingArrivalCount,
+        filterArrivalStatus, setFilterArrivalStatus,
+        showRespondModal, selectedArrivalReport,
 
         // Computed
         filteredItems, computedLocationCode, computedReservedLocationCode,
-        filteredReportes, pendingReportesCount,
 
         // Form helpers
         updateForm, updateLocationForm,
 
         // Delete confirm modal
         showDeleteModal, pendingDeleteItem, cancelDeleteProduct, confirmDeleteProduct,
-        showDeleteReporteModal, cancelEliminarReporte, confirmEliminarReporte,
 
         // Actions
         goBack, openModal, closeModal, openLocationModal, closeLocationModal,
         saveMaterial, deleteProduct, saveLocation,
         verifyProduct, closeVerifyModal, confirmVerify,
-        openReportModal, closeReportModal, confirmReport,
-        openReporteDetail, closeReporteDetail, cambiarEstadoReporte, eliminarReporte,
+        openRespondModal, closeRespondModal, respondArrivalReport,
+
+        // Permissions
+        permissions,
     };
 }
